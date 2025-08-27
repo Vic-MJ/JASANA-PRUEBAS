@@ -814,15 +814,6 @@ export class DatabaseStorage implements IStorage {
     return results;
   }
 
-  async getApprovedRepositions(): Promise<Reposition[]> {
-    return await db.select().from(repositions)
-      .where(and(
-        eq(repositions.status, 'aprobado' as RepositionStatus),
-        ne(repositions.status, 'eliminado' as RepositionStatus)
-      ))
-      .orderBy(desc(repositions.createdAt));
-  }
-
   async getRepositionsByArea(area: Area, userId?: number): Promise<Reposition[]> {
     let whereCondition;
 
@@ -836,21 +827,18 @@ export class DatabaseStorage implements IStorage {
         ];
 
     if (userId) {
-      // Si se proporciona userId, mostrar reposiciones del área actual O creadas por el área
+      // Si se proporciona userId, mostrar reposiciones del área actual O creadas por el usuario
       whereCondition = and(
         or(
           eq(repositions.currentArea, area),
-          eq(repositions.solicitanteArea, area)
+          eq(repositions.createdBy, userId)
         ),
         ...excludeStatuses
       );
     } else {
-      // Sin userId, mostrar reposiciones del área actual O creadas por el área
+      // Sin userId, solo mostrar del área actual
       whereCondition = and(
-        or(
-          eq(repositions.currentArea, area),
-          eq(repositions.solicitanteArea, area)
-        ),
+        eq(repositions.currentArea, area),
         ...excludeStatuses
       );
     }

@@ -18,22 +18,10 @@ export function NotificationsPanel({ open, onClose }: NotificationsPanelProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Assuming 'user' is available in this scope or passed as a prop.
-  // If 'user' is not available, the `enabled: !!user` condition should be adjusted or removed.
-  // For this fix, we'll assume 'user' is defined elsewhere and `enabled: open` is the intended behavior.
-  // If the original `enabled: !!user` was intentional, it implies the panel should only open if a user is logged in.
-  // The user message doesn't provide context on 'user', so we'll revert to `enabled: open` as per the original structure.
+
   const { data: pendingTransfers = [] } = useQuery<Transfer[]>({
     queryKey: ["/api/transfers/pending"],
-    queryFn: async () => {
-      const response = await fetch("/api/transfers/pending", {
-        credentials: 'include'
-      });
-      if (!response.ok) throw new Error('Error al cargar transferencias pendientes');
-      const data = await response.json();
-      return Array.isArray(data) ? data : [];
-    },
-    enabled: open, // Changed from `!!user` to `open` as per original logic and user message context.
+    enabled: open,
   });
 
   const { data: repositionNotifications = [] } = useQuery({
@@ -44,9 +32,9 @@ export function NotificationsPanel({ open, onClose }: NotificationsPanelProps) {
     queryFn: async () => {
       const res = await apiRequest("GET", "/api/notifications");
       const allNotifications = await res.json();
-      return allNotifications.filter((n: any) =>
+      return allNotifications.filter((n: any) => 
         !n.read && (
-          n.type?.includes('reposition') ||
+          n.type?.includes('reposition') || 
           n.type?.includes('completion') ||
           n.type === 'new_reposition' ||
           n.type === 'reposition_transfer' ||
@@ -151,41 +139,48 @@ export function NotificationsPanel({ open, onClose }: NotificationsPanelProps) {
     return names[area] || area;
   };
 
-  const formatDate = (dateInput: string | Date) => {
-    const date = typeof dateInput === "string"
-      ? new Date(dateInput.endsWith('Z') ? dateInput : dateInput + 'Z')
-      : dateInput;
-
+  const formatTimeAgo = (dateInput: string | Date) => {
+    // Convertir a Date si es string
+    const date = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
     const now = new Date();
-    const mexicoNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/Mexico_City' }));
-    const mexicoDate = new Date(date.toLocaleString('en-US', { timeZone: 'America/Mexico_City' }));
 
-    const diffMs = mexicoNow.getTime() - mexicoDate.getTime();
+    // Calcular diferencia directamente sin conversiones adicionales
+    const diffMs = now.getTime() - date.getTime();
     const diffMinutes = Math.floor(diffMs / (1000 * 60));
     const diffHours = Math.floor(diffMinutes / 60);
     const diffDays = Math.floor(diffHours / 24);
 
-    const timeFormat = date.toLocaleString('es-ES', {
-      hour: '2-digit',
+    // Formato de hora local (sin especificar zona horaria)
+    const timeFormat = date.toLocaleString("es-MX", { 
+      timeZone: "America/Mexico_City",
+      hour: '2-digit', 
       minute: '2-digit',
-      timeZone: 'America/Mexico_City'
+      hour12: false
     });
 
-    if (diffDays > 0) {
-      return `Hace ${diffDays} día${diffDays > 1 ? "s" : ""} - ${date.toLocaleString('es-ES', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        timeZone: 'America/Mexico_City'
-      })}`;
+    const dateTimeFormat = date.toLocaleString("es-MX", { 
+      timeZone: "America/Mexico_City",
+      day: '2-digit', 
+      month: '2-digit', 
+      year: 'numeric',
+      hour: '2-digit', 
+      minute: '2-digit',
+      hour12: false
+    });
+
+    if (diffDays > 7) {
+      // Para fechas muy antiguas, mostrar fecha completa
+      return dateTimeFormat;
+    } else if (diffDays > 0) {
+      return `Hace ${diffDays} día${diffDays > 1 ? "s" : ""} - ${timeFormat}`;
     } else if (diffHours > 0) {
       return `Hace ${diffHours} hora${diffHours > 1 ? "s" : ""} - ${timeFormat}`;
-    } else if (diffMinutes > 0) {
+    } else if (diffMinutes > 5) {
       return `Hace ${diffMinutes} minuto${diffMinutes > 1 ? "s" : ""} - ${timeFormat}`;
+    } else if (diffMinutes > 0) {
+      return `Hace ${diffMinutes} minuto${diffMinutes > 1 ? "s" : ""}`;
     } else {
-      return `Hace unos segundos - ${timeFormat}`;
+      return "Hace unos segundos";
     }
   };
 
@@ -316,15 +311,8 @@ export function NotificationsPanel({ open, onClose }: NotificationsPanelProps) {
                   Limpiar todo
                 </Button>
               )}
-              {/* {totalNotifications > 0 && (
-                <Badge className="bg-destructive text-destructive-foreground border-0 shadow-sm">
-                  {totalNotifications}
-                </Badge>
-              )} */}
             </div>
           </SheetTitle>
-
-
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto py-6 space-y-4 max-h-[calc(100vh-12rem)] scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 dark:scrollbar-thumb-gray-600 dark:scrollbar-track-gray-800">
@@ -363,7 +351,7 @@ export function NotificationsPanel({ open, onClose }: NotificationsPanelProps) {
                             </Badge>
                           )}
                           <span className="text-xs text-muted-foreground">
-                            {formatDate(notification.createdAt)}
+                            {formatTimeAgo(notification.createdAt)}
                           </span>
                         </div>
                         {notification.type === 'completion_approval_needed' && (
@@ -412,7 +400,7 @@ export function NotificationsPanel({ open, onClose }: NotificationsPanelProps) {
                           {transfer.pieces} piezas desde {getAreaDisplayName(transfer.fromArea)}
                         </h4>
                         <p className="text-xs text-muted-foreground mt-1">
-                          {formatDate(transfer.createdAt)}
+                          {formatTimeAgo(transfer.createdAt)}
                         </p>
                         <div className="flex flex-col sm:flex-row gap-2 mt-3">
                           <Button

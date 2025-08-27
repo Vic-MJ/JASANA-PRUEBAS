@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useTheme } from "@/hooks/use-theme";
@@ -38,16 +39,8 @@ export function TopBar({ onShowNotifications }: TopBarProps) {
   const { theme } = useTheme();
   const [showProfile, setShowProfile] = useState(false);
 
-  const { data: pendingTransfers = [] } = useQuery({
+  const { data: pendingTransfers = [] } = useQuery<any[]>({
     queryKey: ["/api/transfers/pending"],
-    queryFn: async () => {
-      const response = await fetch("/api/transfers/pending", {
-        credentials: 'include'
-      });
-      if (!response.ok) throw new Error('Error al cargar transferencias pendientes');
-      const data = await response.json();
-      return Array.isArray(data) ? data : [];
-    },
     enabled: !!user,
     refetchInterval: 10000,
     refetchOnWindowFocus: true,
@@ -128,7 +121,7 @@ export function TopBar({ onShowNotifications }: TopBarProps) {
   const getGreeting = () => {
     const now = new Date();
     const hour = now.getHours();
-
+    
     if (hour >= 6 && hour < 12) {
       return "Buenos días";
     } else if (hour >= 12 && hour < 19) {
@@ -158,7 +151,7 @@ export function TopBar({ onShowNotifications }: TopBarProps) {
           <div className="flex items-center gap-3">
             {/* Botón de cambio de tema */}
             <ThemeToggle />
-
+            
             {/* Botón de notificaciones */}
             <Button
               variant="ghost"
