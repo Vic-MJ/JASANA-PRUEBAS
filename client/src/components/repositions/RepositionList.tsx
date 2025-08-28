@@ -1574,14 +1574,19 @@ export function RepositionList({ userArea }: { userArea: string }) {
             <div className="space-y-3">
               {pendingTransfers.map((transfer: any) => (
                 <div key={transfer.id} className="flex items-center justify-between p-3 bg-white rounded-lg border">
-                  <div>
+                  <div className="flex-1">
                     <p className="font-semibold text-gray-800">
                       Reposición desde {transfer.fromArea}
                     </p>
-                    <p className="text-sm text-gray-600">
-                      {transfer.notes && `Notas: ${transfer.notes}`}
-                    </p>
-                    <p className="text-xs text-gray-500">
+                    {transfer.notes && transfer.notes.trim() !== '' && (
+                      <div className="mt-2">
+                        <p className="text-sm font-medium text-gray-700">Comentario del solicitante:</p>
+                        <p className="text-sm text-gray-600 bg-gray-50 p-2 rounded border-l-4 border-blue-400 mt-1 whitespace-pre-wrap break-words">
+                          {transfer.notes}
+                        </p>
+                      </div>
+                    )}
+                    <p className="text-xs text-gray-500 mt-2">
                       {new Date(transfer.createdAt).toLocaleString()}
                     </p>
                   </div>
