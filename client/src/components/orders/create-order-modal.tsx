@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
@@ -34,6 +34,33 @@ export function CreateOrderModal({ open, onClose }: CreateOrderModalProps) {
   });
 
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+
+  // Query para obtener tipos de prenda dinámicamente
+  const { data: tiposPrenda = [] } = useQuery({
+    queryKey: ["/api/catalog/tipos-prenda"],
+    queryFn: async () => {
+      try {
+        const res = await apiRequest("GET", "/api/catalog/tipos-prenda");
+        return await res.json();
+      } catch (error) {
+        console.error("Error fetching tipos de prenda:", error);
+        return [
+          { value: "blusa", label: "Blusa" },
+          { value: "camisa", label: "Camisa" },
+          { value: "chaleco", label: "Chaleco" },
+          { value: "chamarra", label: "Chamarra" },
+          { value: "fajo", label: "Fajo" },
+          { value: "falda", label: "Falda" },
+          { value: "faldaShort", label: "Falda Short" },
+          { value: "mandil", label: "Mandil" },
+          { value: "pantalon", label: "Pantalón" },
+          { value: "saco", label: "Saco" },
+          { value: "short", label: "Short" },
+          { value: "vestido", label: "Vestido" }
+        ];
+      }
+    }
+  });
 
   const createOrderMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -231,18 +258,11 @@ export function CreateOrderModal({ open, onClose }: CreateOrderModalProps) {
                   <SelectValue placeholder="Seleccionar tipo..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="blusa">Blusa</SelectItem>
-                        <SelectItem value="camisa">Camisa</SelectItem>
-                        <SelectItem value="chaleco">Chaleco</SelectItem>
-                        <SelectItem value="chamarra">Chamarra</SelectItem>
-                        <SelectItem value="fajo">Fajo</SelectItem>
-                        <SelectItem value="falda">Falda</SelectItem>
-                        <SelectItem value="faldaShort">Falda Short</SelectItem>
-                        <SelectItem value="mandil">Mandil</SelectItem>
-                        <SelectItem value="pantalon">Pantalón</SelectItem>
-                        <SelectItem value="saco">Saco</SelectItem>
-                        <SelectItem value="short">Short</SelectItem>
-                        <SelectItem value="vestido">Vestido</SelectItem>
+                  {tiposPrenda.map((tipo: any) => (
+                    <SelectItem key={tipo.value} value={tipo.value}>
+                      {tipo.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

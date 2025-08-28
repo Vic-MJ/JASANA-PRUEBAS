@@ -530,11 +530,20 @@ function registerAdminRoutes(app: Express) {
   const router = Router();
 
   router.use((req, res, next) => {
-    if (!req.isAuthenticated()) return res.status(401).json({ message: "Autenticación requerida" });
+    if (!req.isAuthenticated()) {
+      console.log('Admin route: User not authenticated');
+      return res.status(401).json({ message: "Autenticación requerida" });
+    }
 
     const user = req.user!;
-    if (user.area !== 'admin') return res.status(403).json({ message: "Se requiere acceso de administrador" });
+    console.log('Admin route access attempt by user:', user.username, 'area:', user.area);
 
+    if (user.area !== 'admin') {
+      console.log('Admin route: Access denied for area:', user.area);
+      return res.status(403).json({ message: "Se requiere acceso de administrador" });
+    }
+
+    console.log('Admin route: Access granted to user:', user.username);
     next();
   });
 
@@ -679,6 +688,121 @@ function registerAdminRoutes(app: Express) {
     } catch (error) {
       console.error('Backup complete system error:', error);
       res.status(500).json({ message: "Error al generar respaldo completo del sistema" });
+    }
+  });
+
+  // Rutas para tipos de accidente
+  router.get("/accident-types", async (req, res) => {
+    try {
+      const accidentTypes = await storage.getAccidentTypes();
+      res.json(accidentTypes);
+    } catch (error) {
+      console.error('Get accident types error:', error);
+      res.status(500).json({ message: "Error al obtener tipos de accidente" });
+    }
+  });
+
+  router.post("/accident-types", async (req, res) => {
+    try {
+      const { name, description } = req.body;
+      if (!name) {
+        return res.status(400).json({ message: "El nombre es requerido" });
+      }
+      const user = req.user!;
+      const accidentType = await storage.createAccidentType({ name, description }, user.id);
+      res.status(201).json(accidentType);
+    } catch (error) {
+      console.error('Create accident type error:', error);
+      res.status(500).json({ message: "Error al crear tipo de accidente" });
+    }
+  });
+
+  router.put("/accident-types/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { name, description } = req.body;
+      if (!name) {
+        return res.status(400).json({ message: "El nombre es requerido" });
+      }
+      const accidentType = await storage.updateAccidentType(id, { name, description });
+      res.json(accidentType);
+    } catch (error) {
+      console.error('Update accident type error:', error);
+      res.status(500).json({ message: "Error al actualizar tipo de accidente" });
+    }
+  });
+
+  router.delete("/accident-types/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteAccidentType(id);
+      res.json({ message: "Tipo de accidente eliminado correctamente" });
+    } catch (error) {
+      console.error('Delete accident type error:', error);
+      res.status(500).json({ message: "Error al eliminar tipo de accidente" });
+    }
+  });
+
+  // Rutas para áreas personalizables
+  router.get("/custom-areas", async (req, res) => {
+    try {
+      const areas = await storage.getCustomAreas();
+      res.json(areas);
+    } catch (error) {
+      console.error('Get custom areas error:', error);
+      res.status(500).json({ message: "Error al obtener áreas" });
+    }
+  });
+
+  // Ruta para obtener todas las áreas (estándar + personalizadas)
+  router.get("/all-areas", async (req, res) => {
+    try {
+      const areas = await storage.getAllAreas();
+      res.json(areas);
+    } catch (error) {
+      console.error('Get all areas error:', error);
+      res.status(500).json({ message: "Error al obtener todas las áreas" });
+    }
+  });
+
+  router.post("/custom-areas", async (req, res) => {
+    try {
+      const { name, displayName, description } = req.body;
+      if (!name || !displayName) {
+        return res.status(400).json({ message: "El nombre y nombre de visualización son requeridos" });
+      }
+      const user = req.user!;
+      const area = await storage.createCustomArea({ name, displayName, description }, user.id);
+      res.status(201).json(area);
+    } catch (error) {
+      console.error('Create custom area error:', error);
+      res.status(500).json({ message: "Error al crear área" });
+    }
+  });
+
+  router.put("/custom-areas/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { name, displayName, description } = req.body;
+      if (!name || !displayName) {
+        return res.status(400).json({ message: "El nombre y nombre de visualización son requeridos" });
+      }
+      const area = await storage.updateCustomArea(id, { name, displayName, description });
+      res.json(area);
+    } catch (error) {
+      console.error('Update custom area error:', error);
+      res.status(500).json({ message: "Error al actualizar área" });
+    }
+  });
+
+  router.delete("/custom-areas/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteCustomArea(id);
+      res.json({ message: "Área eliminada correctamente" });
+    } catch (error) {
+      console.error('Delete custom area error:', error);
+      res.status(500).json({ message: "Error al eliminar área" });
     }
   });
 
@@ -897,7 +1021,7 @@ function registerRepositionRoutes(app: Express) {
   router.post("/", authenticateToken, upload.array('documents', 5), handleMulterError, async (req, res) => {
     try {
       const user = (req as any).user;
-      
+
       // Verificar que el área pueda crear reposiciones
       const allowedAreas = ['corte', 'bordado', 'ensamble', 'plancha', 'calidad', 'envios', 'admin'];
       if (!allowedAreas.includes(user.area)) {

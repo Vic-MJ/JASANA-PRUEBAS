@@ -1,0 +1,81 @@
+ERROR:  error de sintaxis en o cerca de «$$;
+
+-- Historial de reposiciones
+CREATE TABLE IF NOT EXISTS reposition_history (
+    id SERIAL PRIMARY KEY,
+    reposition_id INTEGER NOT NULL,
+    action TEXT NOT NULL,
+    description TEXT NOT NULL,
+    from_area VARCHAR(50),
+    to_area VARCHAR(50),
+    user_id INTEGER NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT now(),
+    CONSTRAINT reposition_history_user_id_fkey
+        FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+-- Piezas de reposición
+CREATE TABLE IF NOT EXISTS reposition_pieces (
+    id SERIAL PRIMARY KEY,
+    reposition_id INTEGER NOT NULL,
+    talla TEXT NOT NULL,
+    cantidad INTEGER NOT NULL,
+    folio_original TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT now()
+);
+
+-- Productos adicionales de reposición
+CREATE TABLE IF NOT EXISTS reposition_products (
+    id SERIAL PRIMARY KEY,
+    reposition_id INTEGER NOT NULL,
+    modelo_prenda TEXT NOT NULL,
+    tela TEXT NOT NULL,
+    color TEXT NOT NULL,
+    tipo_pieza TEXT NOT NULL,
+    consumo_tela REAL,
+    created_at TIMESTAMP NOT NULL DEFAULT now(),
+    CONSTRAINT reposition_products_reposition_id_fkey 
+        FOREIGN KEY (reposition_id) REFERENCES repositions(id) ON DELETE CASCADE
+);
+
+-- Telas de contraste de reposición
+CREATE TABLE IF NOT EXISTS reposition_contrast_fabrics (
+    id SERIAL PRIMARY KEY,
+    reposition_id INTEGER NOT NULL,
+    tela TEXT NOT NULL,
+    color TEXT NOT NULL,
+    consumo REAL NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT now(),
+    CONSTRAINT reposition_contrast_fabrics_reposition_id_fkey 
+        FOREIGN KEY (reposition_id) REFERENCES repositions(id) ON DELETE CASCADE
+);
+
+-- Tiempos de reposición por área
+CREATE TABLE IF NOT EXISTS reposition_timers (
+    id SERIAL PRIMARY KEY,
+    reposition_id INTEGER NOT NULL,
+    area area NOT NULL,
+    user_id INTEGER NOT NULL,
+    start_time TIMESTAMP,
+    end_time TIMESTAMP,
+    elapsed_minutes REAL,
+    is_running BOOLEAN DEFAULT false,
+    manual_start_time VARCHAR(5), -- HH:MM format
+    manual_end_time VARCHAR(5), -- HH:MM format
+    manual_date VARCHAR(10), -- YYYY-MM-DD format
+    created_at TIMESTAMP NOT NULL DEFAULT now(),
+    CONSTRAINT reposition_timers_reposition_id_fkey 
+        FOREIGN KEY (reposition_id) REFERENCES repositions(id) ON DELETE CASCADE,
+    CONSTRAINT reposition_timers_user_id_fkey 
+        FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+-- Agregar las columnas a la tabla existente si no existen
+DO $$»
+LINE 392: $$;
+          ^ 
+
+SQL state: 42601
+Character: 13049
+Total rows:
+Query complete 00:00:00.060

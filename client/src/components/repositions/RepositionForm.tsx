@@ -1,10 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, Trash2 } from 'lucide-react';
@@ -12,8 +11,9 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
 import { FileUpload } from '@/components/ui/file-upload';
 import Swal from 'sweetalert2';
-import { useEffect } from 'react';
-  import { useQuery } from '@tanstack/react-query';
+import { Textarea } from '@/components/ui/textarea'; // Asegúrate de que Textarea está importado
+  import { useAuth } from '@/hooks/use-auth'; // Asegúrate de que useAuth está importado si se usa en el código original
+  import { apiRequest } from '@/lib/queryClient'; // Asegúrate de que apiRequest está importado
 
 
   interface RepositionPiece {
@@ -51,9 +51,9 @@ import { useEffect } from 'react';
   productos: ProductInfo[];
 }
 
-  const areas = [
-    'patronaje', 'corte', 'bordado', 'ensamble', 'plancha', 'calidad', 'operaciones', 'diseño', 'almacen'
-  ];
+  // const areas = [
+  //   'patronaje', 'corte', 'bordado', 'ensamble', 'plancha', 'calidad', 'operaciones', 'diseño', 'almacen'
+  // ];
 
   const urgencyOptions = [
     { value: 'urgente', label: 'Urgente' },
@@ -61,25 +61,16 @@ import { useEffect } from 'react';
     { value: 'poco_urgente', label: 'Poco Urgente' }
   ];
 
-  const commonAccidents = [
-    'Accidente por operario',
-    'Bordado mal posicionado',
-    'Costuras en mal estado',
-    'Daño por maquilero',
-    'Daño por máquina',
-    'Defecto de tela',
-    'Defecto en el ensamble',
-    'Error de diseño',
-    'Error de información',
-    'Error de plancha',
-    'Error en la fabricación',
-    'Falla en el proceso de corte',
-    'Problema de calidad',
-    'Tela sucia o manchada',
-    'Otro'
-  ];
+  // Definición de RepositionFormProps si no está definida en otro lugar
+  interface RepositionFormProps {
+    isEdit?: boolean;
+    reposition?: any; // Ajusta esto al tipo de dato real de la reposición
+    onClose: () => void;
+  }
 
-  export function RepositionForm({ onClose, repositionId }: { onClose: () => void; repositionId?: number }) {
+  export function RepositionForm({ isEdit = false, reposition, onClose }: RepositionFormProps) {
+    const { user } = useAuth(); // Asumiendo que useAuth está disponible
+    // const { toast } = useToast(); // Asumiendo que useToast está disponible
     const queryClient = useQueryClient();
     const [productos, setProductos] = useState<ProductInfo[]>([{ 
       modeloPrenda: '', 
@@ -90,44 +81,72 @@ import { useEffect } from 'react';
       pieces: [{ talla: '', cantidad: 1, folioOriginal: '' }]
     }]);
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(false); // Este estado parece no usarse activamente en el submit, pero se mantiene por si acaso
+
+    // Obtener tipos de accidente dinámicamente
+    const { data: accidentTypes = [] } = useQuery({
+      queryKey: ["/api/admin/accident-types"],
+      queryFn: async () => {
+        const res = await apiRequest("GET", "/api/admin/accident-types"); // Asumiendo que apiRequest está correctamente configurada
+        if (!res.ok) {
+          // Manejar el error de la API si es necesario
+          console.error("Error fetching accident types:", res.statusText);
+          return []; // Devolver un array vacío en caso de error
+        }
+        return await res.json();
+      }
+    });
+
+    // Obtener áreas dinámicamente
+    const { data: customAreas = [] } = useQuery({
+      queryKey: ["/api/admin/custom-areas"],
+      queryFn: async () => {
+        const res = await apiRequest("GET", "/api/admin/custom-areas"); // Asumiendo que apiRequest está correctamente configurada
+        if (!res.ok) {
+          // Manejar el error de la API si es necesario
+          console.error("Error fetching custom areas:", res.statusText);
+          return []; // Devolver un array vacío en caso de error
+        }
+        return await res.json();
+      }
+    });
 
     // Query to load existing reposition data if editing
     const { data: existingReposition } = useQuery({
-      queryKey: ['reposition', repositionId, 'edit'],
+      queryKey: ['reposition', reposition?.id, 'edit'], // Usar el ID de la prop 'reposition'
       queryFn: async () => {
-        if (!repositionId) return null;
-        const response = await fetch(`/api/repositions/${repositionId}?t=${Date.now()}`);
+        if (!reposition?.id) return null;
+        const response = await fetch(`/api/repositions/${reposition.id}?t=${Date.now()}`);
         if (!response.ok) throw new Error('Failed to fetch reposition');
         return response.json();
       },
-      enabled: !!repositionId,
+      enabled: !!reposition?.id, // Habilitar solo si 'reposition' y su 'id' existen
       staleTime: 0, // Always consider data stale
       refetchOnMount: 'always' // Always refetch when component mounts
     });
 
     const { data: existingPieces = [] } = useQuery({
-      queryKey: ['reposition-pieces', repositionId, 'edit'],
+      queryKey: ['reposition-pieces', reposition?.id, 'edit'],
       queryFn: async () => {
-        if (!repositionId) return [];
-        const response = await fetch(`/api/repositions/${repositionId}/pieces?t=${Date.now()}`);
+        if (!reposition?.id) return [];
+        const response = await fetch(`/api/repositions/${reposition.id}/pieces?t=${Date.now()}`);
         if (!response.ok) return [];
         return response.json();
       },
-      enabled: !!repositionId,
+      enabled: !!reposition?.id,
       staleTime: 0, // Always consider data stale
       refetchOnMount: 'always' // Always refetch when component mounts
     });
 
     const { data: existingProducts = [] } = useQuery({
-      queryKey: ['reposition-products', repositionId, 'edit'],
+      queryKey: ['reposition-products', reposition?.id, 'edit'],
       queryFn: async () => {
-        if (!repositionId) return [];
-        const response = await fetch(`/api/repositions/${repositionId}/products?t=${Date.now()}`);
+        if (!reposition?.id) return [];
+        const response = await fetch(`/api/repositions/${reposition.id}/products?t=${Date.now()}`);
         if (!response.ok) return [];
         return response.json();
       },
-      enabled: !!repositionId,
+      enabled: !!reposition?.id,
       staleTime: 0, // Always consider data stale
       refetchOnMount: 'always' // Always refetch when component mounts
     });
@@ -329,7 +348,7 @@ import { useEffect } from 'react';
       setProductos(productos.filter((_, i) => i !== index));
     };
 
-    const updateProducto = (index: number, field: keyof ProductInfo, value: string | number) => {
+    const updateProducto = (index: number, field: keyof ProductInfo, value: string | number | File[]) => {
       const newProductos = [...productos];
       if (field === 'pieces') return; // Handle pieces separately
       newProductos[index] = { ...newProductos[index], [field]: value };
@@ -385,7 +404,9 @@ import { useEffect } from 'react';
       ];
 
       for (const { field, message } of requiredFields) {
-        if (!data[field as keyof RepositionFormData] || String(data[field as keyof RepositionFormData]).trim() === '') {
+        // La validación de react-hook-form ya debería manejar esto, pero una doble verificación no está de más.
+        // @ts-ignore: Ignorar error de acceso a propiedad inexistente para simplificar la validación genérica
+        if (!data[field] || String(data[field]).trim() === '') {
           Swal.fire({
             title: 'Error',
             text: message,
@@ -520,6 +541,8 @@ import { useEffect } from 'react';
       createRepositionMutation.mutate(formDataToSend);
     };
 
+    const repositionId = reposition?.id; // Definir repositionId
+
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
         <div className="bg-card rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
@@ -572,8 +595,22 @@ import { useEffect } from 'react';
                   />
                 </div>
                 <div>
-                  <Label>Fecha de Solicitud</Label>
-                  <Input value={new Date().toLocaleDateString()} disabled />
+                  <Label htmlFor="solicitanteArea">Área del Solicitante *</Label>
+                  <Select
+                    value={watch('solicitanteArea') || ''}
+                    onValueChange={(value) => setValue('solicitanteArea', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona un área" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {customAreas.map((area: any) => (
+                        <SelectItem key={area.id} value={area.name}>
+                          {area.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </CardContent>
             </Card>
@@ -634,9 +671,9 @@ import { useEffect } from 'react';
                       <SelectValue placeholder="Selecciona el tipo de accidente" />
                     </SelectTrigger>
                     <SelectContent>
-                      {commonAccidents.map((accident) => (
-                        <SelectItem key={accident} value={accident}>
-                          {accident}
+                      {accidentTypes.map((type: any) => (
+                        <SelectItem key={type.id} value={type.name}>
+                          {type.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -668,9 +705,9 @@ import { useEffect } from 'react';
                       <SelectValue placeholder="Selecciona un área" />
                     </SelectTrigger>
                     <SelectContent>
-                      {areas.map((area) => (
-                        <SelectItem key={area} value={area}>
-                          {area.charAt(0).toUpperCase() + area.slice(1)}
+                      {customAreas.map((area: any) => (
+                        <SelectItem key={area.id} value={area.name}>
+                          {area.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -687,9 +724,9 @@ import { useEffect } from 'react';
                       <SelectValue placeholder="Selecciona un área" />
                     </SelectTrigger>
                     <SelectContent>
-                      {areas.map((area) => (
-                        <SelectItem key={area} value={area}>
-                          {area.charAt(0).toUpperCase() + area.slice(1)}
+                      {customAreas.map((area: any) => (
+                        <SelectItem key={area.id} value={area.name}>
+                          {area.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -1027,7 +1064,7 @@ import { useEffect } from 'react';
               }
               return null;
             })()}
-            
+
 
             <div className="flex justify-end space-x-4">
               <Button type="button" variant="outline" onClick={onClose}>
