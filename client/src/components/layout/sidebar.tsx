@@ -175,7 +175,7 @@ export function CustomSidebar({ onShowNotifications, onCreateOrder, onCreateRepo
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              <SidebarMenuItem>
+              {/* <SidebarMenuItem>
                 <SidebarMenuButton 
                     onClick={(e) => {
                       e.preventDefault();
@@ -200,7 +200,7 @@ export function CustomSidebar({ onShowNotifications, onCreateOrder, onCreateRepo
                     <span className="transition-colors duration-200 group-data-[collapsible=icon]:hidden">Tablero</span>
                   </div>
                 </SidebarMenuButton>
-              </SidebarMenuItem>
+              </SidebarMenuItem> */}
 
               {/* <SidebarMenuItem>
                 <SidebarMenuButton 
@@ -271,21 +271,21 @@ export function CustomSidebar({ onShowNotifications, onCreateOrder, onCreateRepo
               </SidebarMenuItem>
 
               <SidebarMenuItem>
-                <SidebarMenuButton 
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const wasCollapsed = state === 'collapsed';
-                    setLocation('/history');
-                    // Mantener estado de colapso
-                    if (wasCollapsed) {
-                      setTimeout(() => setOpen(false), 1);
-                    }
-                  }}
+                 <SidebarMenuButton 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      const wasCollapsed = state === 'collapsed';
+                      setLocation('/dashboard');
+                      // Mantener estado de colapso
+                      if (wasCollapsed) {
+                        setTimeout(() => setOpen(false), 1);
+                      }
+                    }}
                   asChild
-                  isActive={location === '/history'}
+                  isActive={location === '/dashboard'}
                   className={`h-10 transition-all duration-200 hover:bg-gradient-to-r hover:from-[#8c69a5]/10 hover:to-[#504b78]/10 hover:scale-[1.02] hover:shadow-sm ${
-                    location === '/history' 
+                    location === '/dashboard' 
                       ? 'bg-gradient-to-r from-[#8c69a5]/20 to-[#504b78]/20 text-[#8c69a5] border-r-2 border-[#8c69a5] font-medium shadow-sm' 
                       : ''
                   }`}

@@ -4,6 +4,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { InferSelectModel, InferInsertModel } from "drizzle-orm";
 
+export const areaEnum = pgEnum("area", ["patronaje", "corte", "bordado", "ensamble", "plancha", "calidad", "operaciones", "admin", "almacen", "diseño", "envios"]);
 export const repositionTypeEnum = pgEnum("reposition_type", ["repocision", "reproceso"]);
 export const urgencyEnum = pgEnum("urgency", ["urgente", "intermedio", "poco_urgente"]);
 export const repositionStatusEnum = pgEnum("reposition_status", ["pendiente", "aprobado", "rechazado", "completado", "eliminado", "cancelado"]);
@@ -36,7 +37,7 @@ export const users = pgTable("users", {
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   name: text("name").notNull(),
-  area: text("area").notNull(),
+  area: areaEnum("area").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -51,7 +52,7 @@ export const orders = pgTable("orders", {
   color: text("color").notNull(),
   tela: text("tela").notNull(),
   totalPiezas: integer("total_piezas").notNull(),
-  currentArea: text("current_area").notNull().default("corte"),
+  currentArea: areaEnum("current_area").notNull().default("corte"),
   status: orderStatusEnum("status").notNull().default("active"),
   createdBy: integer("created_by").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -61,7 +62,7 @@ export const orders = pgTable("orders", {
 export const orderPieces = pgTable("order_pieces", {
   id: serial("id").primaryKey(),
   orderId: integer("order_id").notNull(),
-  area: text("area").notNull(),
+  area: areaEnum("area").notNull(),
   pieces: integer("pieces").notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -69,8 +70,8 @@ export const orderPieces = pgTable("order_pieces", {
 export const transfers = pgTable("transfers", {
   id: serial("id").primaryKey(),
   orderId: integer("order_id").notNull(),
-  fromArea: text("from_area").notNull(),
-  toArea: text("to_area").notNull(),
+  fromArea: areaEnum("from_area").notNull(),
+  toArea: areaEnum("to_area").notNull(),
   pieces: integer("pieces").notNull(),
   status: transferStatusEnum("status").notNull().default("pending"),
   notes: text("notes"),
@@ -85,8 +86,8 @@ export const orderHistory = pgTable("order_history", {
   orderId: integer("order_id").notNull(),
   action: text("action").notNull(),
   description: text("description").notNull(),
-  fromArea: text("from_area"),
-  toArea: text("to_area"),
+  fromArea: areaEnum("from_area"),
+  toArea: areaEnum("to_area"),
   pieces: integer("pieces"),
   userId: integer("user_id").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -111,7 +112,7 @@ export const repositions = pgTable('repositions', {
   type: repositionTypeEnum('type').notNull(),
 
   solicitanteNombre: text('solicitante_nombre').notNull(),
-  solicitanteArea: text('solicitante_area').notNull(),
+  solicitanteArea: areaEnum('solicitante_area').notNull(),
   fechaSolicitud: timestamp('fecha_solicitud').defaultNow().notNull(),
 
   noSolicitud: text('no_solicitud').notNull(),
@@ -135,7 +136,7 @@ export const repositions = pgTable('repositions', {
   volverHacer: text('volver_hacer'),
   materialesImplicados: text('materiales_implicados'),
 
-  currentArea: text('current_area').notNull(),
+  currentArea: areaEnum('current_area').notNull(),
   status: repositionStatusEnum('status').notNull().default('pendiente'),
 
   createdBy: integer('created_by').notNull(),
@@ -178,7 +179,7 @@ export const repositionContrastFabrics = pgTable("reposition_contrast_fabrics", 
 export const repositionTimers = pgTable("reposition_timers", {
     id: serial("id").primaryKey(),
     repositionId: integer("reposition_id").notNull(),
-    area: text("area").notNull(),
+    area: areaEnum("area").notNull(),
     userId: integer("user_id").notNull(),
     startTime: timestamp("start_time"),
     endTime: timestamp("end_time"),
@@ -193,8 +194,8 @@ export const repositionTimers = pgTable("reposition_timers", {
 export const repositionTransfers = pgTable("reposition_transfers", {
   id: serial("id").primaryKey(),
   repositionId: integer("reposition_id").notNull(),
-  fromArea: text("from_area").notNull(),
-  toArea: text("to_area").notNull(),
+  fromArea: areaEnum("from_area").notNull(),
+  toArea: areaEnum("to_area").notNull(),
   notes: text("notes"),
   createdBy: integer("created_by").notNull(),
   processedBy: integer("processed_by"),
@@ -208,8 +209,8 @@ export const repositionHistory = pgTable("reposition_history", {
   repositionId: integer("reposition_id").notNull(),
   action: text("action").notNull(),
   description: text("description").notNull(),
-  fromArea: text("from_area"),
-  toArea: text("to_area"),
+  fromArea: areaEnum("from_area"),
+  toArea: areaEnum("to_area"),
   userId: integer("user_id").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -484,7 +485,7 @@ export type RepositionTransfer = InferSelectModel<typeof repositionTransfers>;
 export const agendaEvents = pgTable("agenda_events", {
   id: serial("id").primaryKey(),
   createdBy: integer("created_by").notNull().references(() => users.id), // Quién creó la tarea (Admin/Envíos)
-  assignedToArea: text("assigned_to_area").notNull(), // Área a la que se asigna la tarea
+  assignedToArea: areaEnum("assigned_to_area").notNull(), // Área a la que se asigna la tarea
   title: varchar("title", { length: 255 }).notNull(),
   description: text("description"),
   date: varchar("date", { length: 10 }).notNull(), // YYYY-MM-DD format
@@ -501,65 +502,8 @@ export type InsertAgendaEvent = typeof agendaEvents.$inferInsert;
 export const insertAgendaEventSchema = createInsertSchema(agendaEvents);
 export type InsertAgendaEventSchema = z.infer<typeof insertAgendaEventSchema>;
 
-// Tablas para tipos de accidente y áreas personalizables
-export const accidentTypes = pgTable("accident_types", {
-  id: serial("id").primaryKey(),
-  name: varchar("name", { length: 255 }).notNull().unique(),
-  description: text("description"),
-  isActive: boolean("is_active").notNull().default(true),
-  createdBy: integer("created_by").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export const customAreas = pgTable("custom_areas", {
-  id: serial("id").primaryKey(),
-  name: varchar("name", { length: 100 }).notNull().unique(),
-  displayName: varchar("display_name", { length: 255 }).notNull(),
-  description: text("description"),
-  isActive: boolean("is_active").notNull().default(true),
-  createdBy: integer("created_by").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
-
-// Relaciones
-export const accidentTypesRelations = relations(accidentTypes, ({ one }) => ({
-  creator: one(users, {
-    fields: [accidentTypes.createdBy],
-    references: [users.id],
-  }),
-}));
-
-export const customAreasRelations = relations(customAreas, ({ one }) => ({
-  creator: one(users, {
-    fields: [customAreas.createdBy],
-    references: [users.id],
-  }),
-}));
-
-// Tipos
-export type AccidentType = InferSelectModel<typeof accidentTypes>;
-export type InsertAccidentType = InferInsertModel<typeof accidentTypes>;
-export type CustomArea = InferSelectModel<typeof customAreas>;
-export type InsertCustomArea = InferInsertModel<typeof customAreas>;
-
-export const insertAccidentTypeSchema = createInsertSchema(accidentTypes).omit({
-  id: true,
-  createdBy: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export const insertCustomAreaSchema = createInsertSchema(customAreas).omit({
-  id: true,
-  createdBy: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
 export const areas = ['patronaje', 'corte', 'bordado', 'ensamble', 'plancha', 'calidad', 'operaciones', 'envios', 'almacen', 'admin', 'diseño'] as const;
-export type Area = string;
+export type Area = "patronaje" | "corte" | "bordado" | "ensamble" | "plancha" | "calidad" | "operaciones" | "admin" | "almacen" | "diseño" | "envios";
 export type MaterialStatus = "disponible" | "falta_parcial" | "no_disponible";
 export type RepositionMaterial = InferSelectModel<typeof repositionMaterials>;
 export type InsertRepositionMaterial = InferInsertModel<typeof repositionMaterials>;

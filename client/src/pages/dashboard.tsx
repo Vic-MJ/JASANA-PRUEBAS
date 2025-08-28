@@ -55,8 +55,8 @@ export default function Dashboard() {
       {/* Top Bar */}
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-gray-800">Tablero</h2>
-          <p className="text-gray-600">Gestión de pedidos en tiempo real</p>
+          <h2 className="text-2xl font-bold text-gray-800">Historial</h2>
+          <p className="text-gray-600">Actividad Reciente</p>
         </div>
         <div className="flex items-center space-x-4">
           {/* Search Bar */}

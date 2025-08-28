@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Layout } from "@/components/layout/layout";
 import { Calendar } from "@/components/ui/calendar";
@@ -12,8 +13,6 @@ import { Badge } from "@/components/ui/badge";
 import { Clock, Plus, Calendar as CalendarIcon, Edit, Trash2, Users, CheckCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/api-request";
 
 interface AgendaEvent {
   id: number;
@@ -33,17 +32,6 @@ interface AgendaEvent {
 export default function AgendaPage() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  // Query para obtener áreas personalizables
-  const { data: customAreas = [] } = useQuery({
-    queryKey: ["/api/admin/custom-areas"],
-    queryFn: async () => {
-      const res = await apiRequest("GET", "/api/admin/custom-areas");
-      return await res.json();
-    }
-  });
-
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() => {
     const today = new Date();
@@ -100,11 +88,11 @@ export default function AgendaPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+    
     try {
       const url = editingEvent ? `/api/agenda/${editingEvent.id}` : '/api/agenda';
       const method = editingEvent ? 'PUT' : 'POST';
-
+      
       const response = await fetch(url, {
         method,
         headers: {
@@ -281,6 +269,7 @@ export default function AgendaPage() {
       plancha: 'Plancha/Empaque',
       calidad: 'Calidad',
       envios: 'Envíos',
+      admin: 'Administración',
       operaciones: 'Operaciones'
     };
     return names[area] || area;
@@ -341,11 +330,12 @@ export default function AgendaPage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {customAreas.filter((area: any) => area.isActive).map((area: any) => (
-                          <SelectItem key={area.id} value={area.name}>
-                            {area.displayName}
-                          </SelectItem>
-                        ))}
+                        <SelectItem value="corte">Corte</SelectItem>
+                        <SelectItem value="bordado">Bordado</SelectItem>
+                        <SelectItem value="ensamble">Ensamble</SelectItem>
+                        <SelectItem value="plancha">Plancha/Empaque</SelectItem>
+                        <SelectItem value="calidad">Calidad</SelectItem>
+                        <SelectItem value="operaciones">Operaciones</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -494,7 +484,7 @@ export default function AgendaPage() {
                   {weekDays.map((day, index) => {
                     const dayEvents = getEventsForDate(day);
                     const dayName = getDayName(day).charAt(0).toUpperCase() + getDayName(day).slice(1);
-
+                    
                     return (
                       <div key={index} className={`border rounded-lg overflow-hidden min-h-[320px] transition-colors duration-200 ${
                         isToday(day) 
@@ -518,7 +508,7 @@ export default function AgendaPage() {
                             {day.getDate()}
                           </div>
                         </div>
-
+                        
                         {/* Lista de tareas */}
                         <div className="p-3 space-y-2 max-h-[260px] overflow-y-auto">
                           {dayEvents.map((event) => (
@@ -539,26 +529,26 @@ export default function AgendaPage() {
                                   {event.status}
                                 </Badge>
                               </div>
-
+                              
                               {/* Título de la tarea */}
                               <div className="font-medium text-foreground text-sm mb-2 leading-tight">
                                 {event.title}
                               </div>
-
+                              
                               {/* Área asignada */}
                               <div className="flex items-center justify-between mb-2">
                                 <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
                                   {getAreaDisplayName(event.assignedToArea)}
                                 </span>
                               </div>
-
+                              
                               {/* Descripción */}
                               {event.description && (
                                 <div className="text-xs text-muted-foreground leading-relaxed line-clamp-2 mb-2">
                                   {event.description}
                                 </div>
                               )}
-
+                              
                               {/* Botones de acción */}
                               {canCreateEdit && (
                                 <div className="flex justify-end space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">

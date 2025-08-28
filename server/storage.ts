@@ -11,6 +11,7 @@ import {
   repositionTimers,
   repositionTransfers,
   repositionHistory,
+  repositionMaterials,
   adminPasswords,
   agendaEvents,
   documents,
@@ -38,9 +39,7 @@ import {
   type InsertAgendaEvent,
   type Area,
   type RepositionType,
-  type RepositionStatus,
-  accidentTypes,
-  customAreas as customAreasSchema
+  type RepositionStatus
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, or, ne, isNotNull, isNull, count, gte, lte, sql, asc } from 'drizzle-orm';
@@ -221,21 +220,6 @@ export interface IStorage {
    // Backup and Restore methods
    async backupCompleteSystem(): Promise<any>;
    async restoreCompleteSystem(backupData: any): Promise<any>;
-
-  // Métodos para gestión de tipos de accidente
-  getAccidentTypes(): Promise<any[]>;
-  createAccidentType(data: any, userId: number): Promise<any>;
-  updateAccidentType(id: number, data: any): Promise<any>;
-  deleteAccidentType(id: number): Promise<void>;
-
-  // Métodos para gestión de áreas personalizables
-  getCustomAreas(): Promise<any[]>;
-  createCustomArea(data: any, userId: number): Promise<any>;
-  updateCustomArea(id: number, data: any): Promise<any>;
-  deleteCustomArea(id: number): Promise<void>;
-
-  // Método para obtener todas las áreas disponibles
-  getAllAreas(): Promise<Array<{ name: string; displayName: string }>>;
 }
 
 export interface LocalRepositionTimer {
@@ -790,7 +774,7 @@ export class DatabaseStorage implements IStorage {
 
   async getRepositions(area?: Area, userArea?: Area | 'admin' | 'envios' | 'diseño'): Promise<Reposition[]> {
     console.log(`Getting repositions for area: ${area}, userArea: ${userArea}`);
-
+    
     let query = db.select().from(repositions);
 
     if (userArea === 'diseño') {
@@ -818,7 +802,7 @@ export class DatabaseStorage implements IStorage {
 
     const results = await (query as any).orderBy(desc(repositions.createdAt));
     console.log(`Found ${results.length} repositions for user area ${userArea}`);
-
+    
     if (results.length > 0) {
       console.log('Sample results:', results.slice(0, 3).map((r: any) => ({
         folio: r.folio,
@@ -826,7 +810,7 @@ export class DatabaseStorage implements IStorage {
         type: r.type
       })));
     }
-
+    
     return results;
   }
 
@@ -995,7 +979,7 @@ export class DatabaseStorage implements IStorage {
       type: 'transfer_processed',
       title: `Transferencia ${action === 'accepted' ? 'Aceptada' : 'Rechazada'}`,
       message: `La transferencia de la reposición ${reposition?.folio} ha sido ${action === 'accepted' ? 'aceptada' : 'rechazada'}`,
-      repositionId: reposition.repositionId,
+      repositionId: transfer.repositionId,
     });
 
     // Si fue aceptada, notificar a usuarios del área de destino
@@ -2699,8 +2683,8 @@ async createReposition(data: InsertReposition & { folio: string, productos?: any
       }
 
       await db.update(users)
-      .set(updateFields)
-      .where(eq(users.id, userId));
+        .set(updateFields)
+        .where(eq(users.id, userId));
 
       console.log(`User ${userId} updated successfully`);
     } catch (error) {
@@ -3639,7 +3623,7 @@ async createReposition(data: InsertReposition & { folio: string, productos?: any
        // 2. Reposiciones
        if (backupData.tables.repositions && Array.isArray(backupData.tables.repositions)) {
          console.log(`Restaurando ${backupData.tables.repositions.length} reposiciones...`);
-
+         
          // Log sample of repositions being restored
          if (backupData.tables.repositions.length > 0) {
            console.log('Sample repositions to restore:', backupData.tables.repositions.slice(0, 3).map(r => ({
@@ -3649,7 +3633,7 @@ async createReposition(data: InsertReposition & { folio: string, productos?: any
              solicitanteArea: r.solicitanteArea
            })));
          }
-
+         
          for (const repositionData of backupData.tables.repositions) {
            try {
              const existingReposition = await db.select().from(repositions).where(eq(repositions.folio, repositionData.folio)).limit(1);
@@ -3660,10 +3644,10 @@ async createReposition(data: InsertReposition & { folio: string, productos?: any
                  completedAt: repositionData.completedAt ? new Date(repositionData.completedAt) : null,
                  approvedAt: repositionData.approvedAt ? new Date(repositionData.approvedAt) : null
                };
-
+               
                // Log what we're inserting
                console.log(`Inserting reposition ${repositionData.folio} with status: ${repositionData.status}`);
-
+               
                await db.insert(repositions).values(insertData);
                restored.repositions++;
              } else {
@@ -3675,7 +3659,7 @@ async createReposition(data: InsertReposition & { folio: string, productos?: any
            }
          }
          console.log(`Reposiciones procesadas: ${restored.repositions} creadas`);
-
+         
          // Verify repositions were inserted
          const totalAfterRestore = await db.select({ count: sql<number>`COUNT(*)::int` }).from(repositions);
          console.log(`Total repositions in database after restore: ${totalAfterRestore[0]?.count || 0}`);
@@ -3880,98 +3864,6 @@ async createReposition(data: InsertReposition & { folio: string, productos?: any
        throw new Error(`Error al restaurar el sistema completo: ${error.message}`);
      }
    }
-
-  // Métodos para gestión de tipos de accidente
-  async getAccidentTypes(): Promise<any[]> {
-    return await db.select().from(accidentTypes)
-      .where(eq(accidentTypes.isActive, true))
-      .orderBy(accidentTypes.name);
-  }
-
-  async createAccidentType(data: any, userId: number): Promise<any> {
-    const [accidentType] = await db.insert(accidentTypes).values({
-      ...data,
-      createdBy: userId,
-      updatedAt: new Date()
-    }).returning();
-    return accidentType;
-  }
-
-  async updateAccidentType(id: number, data: any): Promise<any> {
-    const [accidentType] = await db.update(accidentTypes)
-      .set({
-        ...data,
-        updatedAt: new Date()
-      })
-      .where(eq(accidentTypes.id, id))
-      .returning();
-    return accidentType;
-  }
-
-  async deleteAccidentType(id: number): Promise<void> {
-    await db.update(accidentTypes)
-      .set({ isActive: false, updatedAt: new Date() })
-      .where(eq(accidentTypes.id, id));
-  }
-
-  // Métodos para gestión de áreas personalizables
-  async getCustomAreas(): Promise<any[]> {
-    return await db.select().from(customAreasSchema)
-      .where(eq(customAreasSchema.isActive, true))
-      .orderBy(customAreasSchema.displayName);
-  }
-
-  async createCustomArea(data: any, userId: number): Promise<any> {
-    const [area] = await db.insert(customAreasSchema).values({
-      ...data,
-      createdBy: userId,
-      updatedAt: new Date()
-    }).returning();
-    return area;
-  }
-
-  async updateCustomArea(id: number, data: any): Promise<any> {
-    const [area] = await db.update(customAreasSchema)
-      .set({
-        ...data,
-        updatedAt: new Date()
-      })
-      .where(eq(customAreasSchema.id, id))
-      .returning();
-    return area;
-  }
-
-  async deleteCustomArea(id: number): Promise<void> {
-    await db.update(customAreasSchema)
-      .set({ isActive: false, updatedAt: new Date() })
-      .where(eq(customAreasSchema.id, id));
-  }
-
-  // Método para obtener todas las áreas disponibles
-  async getAllAreas(): Promise<Array<{ name: string; displayName: string }>> {
-    // Obtener áreas estándar
-    const standardAreas = [
-      { name: 'admin', displayName: 'Administración' },
-      { name: 'corte', displayName: 'Corte' },
-      { name: 'bordado', displayName: 'Bordado' },
-      { name: 'ensamble', displayName: 'Ensamble' },
-      { name: 'plancha', displayName: 'Plancha' },
-      { name: 'calidad', displayName: 'Calidad' },
-      { name: 'operaciones', displayName: 'Operaciones' },
-      { name: 'envios', displayName: 'Envíos' },
-      { name: 'almacen', displayName: 'Almacén' },
-      { name: 'diseño', displayName: 'Diseño' },
-      { name: 'patronaje', displayName: 'Patronaje' }
-    ];
-
-    // Obtener áreas personalizadas
-    const customAreas = await db.select().from(customAreasSchema).where(eq(customAreasSchema.isActive, true));
-
-    return [...standardAreas, ...customAreas.map(area => ({ 
-      name: area.name, 
-      displayName: area.displayName 
-    }))];
-  }
 }
 
 export const storage = new DatabaseStorage();

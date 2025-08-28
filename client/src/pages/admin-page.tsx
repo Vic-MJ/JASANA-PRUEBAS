@@ -13,7 +13,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Settings, Users, RotateCcw, Shield, TrendingUp, Package, Edit2, Trash2, UserPlus, Download, Database, Bell, FileText, Activity, AlertTriangle, Upload, Loader2, Plus } from "lucide-react";
+import { Settings, Users, RotateCcw, Shield, TrendingUp, Package, Edit2, Trash2, UserPlus, Download, Database, Bell, FileText, Activity, AlertTriangle, Upload, Loader2 } from "lucide-react";
 import { type Order } from "@shared/schema";
 
 // Define User type locally with 'active' property if not present in @shared/schema
@@ -21,26 +21,10 @@ type User = {
   id: number;
   username: string;
   name: string;
-  area: string;
+  area: "patronaje" | "corte" | "bordado" | "ensamble" | "plancha" | "calidad" | "operaciones" | "admin" | "almacen" | "diseño";
   createdAt: Date;
   password: string;
   active: boolean; 
-};
-
-// Define AccidentType and CustomArea types
-type AccidentType = {
-  id: number;
-  name: string;
-  description?: string;
-};
-
-// Define CustomArea type with isActive property
-type CustomArea = {
-  id: number;
-  name: string;
-  displayName: string;
-  description?: string;
-  isActive?: boolean; // Add isActive property
 };
 
 export default function AdminPage() {
@@ -65,16 +49,6 @@ export default function AdminPage() {
   const [showSystemBackupModal, setShowSystemBackupModal] = useState(false);
   const [showSystemRestoreModal, setShowSystemRestoreModal] = useState(false);
   const [systemRestoreFile, setSystemRestoreFile] = useState<File | null>(null);
-
-  // States for Accident Types
-  const [showAccidentTypeModal, setShowAccidentTypeModal] = useState(false);
-  const [editingAccidentType, setEditingAccidentType] = useState<AccidentType | null>(null);
-  const [accidentTypeForm, setAccidentTypeForm] = useState({ name: "", description: "" });
-
-  // States for Custom Areas
-  const [showCustomAreaModal, setShowCustomAreaModal] = useState(false);
-  const [editingCustomArea, setEditingCustomArea] = useState<CustomArea | null>(null);
-  const [customAreaForm, setCustomAreaForm] = useState({ name: "", displayName: "", description: "" });
 
   if (user?.area !== 'admin') {
     return (
@@ -104,22 +78,6 @@ export default function AdminPage() {
 
   const { data: stats } = useQuery({
     queryKey: ["/api/dashboard/stats"],
-  });
-
-  const { data: accidentTypes = [] } = useQuery<AccidentType[]>({
-    queryKey: ["/api/admin/accident-types"],
-    queryFn: async () => {
-      const res = await apiRequest("GET", "/api/admin/accident-types");
-      return await res.json();
-    }
-  });
-
-  const { data: customAreas = [] } = useQuery<CustomArea[]>({
-    queryKey: ["/api/admin/custom-areas"],
-    queryFn: async () => {
-      const res = await apiRequest("GET", "/api/admin/custom-areas");
-      return await res.json();
-    }
   });
 
   const resetPasswordMutation = useMutation({
@@ -223,7 +181,7 @@ export default function AdminPage() {
       setShowClearDatabaseModal(false);
       setConfirmationCode("");
       setDeleteUsersChecked(false);
-      // Invalida todas las queries
+      // Invalidar todas las queries
       queryClient.invalidateQueries();
     },
     onError: (error: Error) => {
@@ -357,121 +315,6 @@ export default function AdminPage() {
       });
     }
   });
-
-  // Mutaciones para tipos de accidente
-  const createAccidentTypeMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const res = await apiRequest("POST", "/api/admin/accident-types", data);
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || "Error al crear tipo de accidente");
-      }
-      return res.json();
-    },
-    onSuccess: () => {
-      toast({ title: "Tipo de accidente creado correctamente" });
-      setShowAccidentTypeModal(false);
-      setAccidentTypeForm({ name: "", description: "" });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/accident-types"] });
-    },
-    onError: (error: Error) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    }
-  });
-
-  const updateAccidentTypeMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const { id, ...updateData } = data;
-      const res = await apiRequest("PUT", `/api/admin/accident-types/${id}`, updateData);
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || "Error al actualizar tipo de accidente");
-      }
-      return res.json();
-    },
-    onSuccess: () => {
-      toast({ title: "Tipo de accidente actualizado correctamente" });
-      setShowAccidentTypeModal(false);
-      setEditingAccidentType(null);
-      setAccidentTypeForm({ name: "", description: "" });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/accident-types"] });
-    },
-    onError: (error: Error) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    }
-  });
-
-  const deleteAccidentTypeMutation = useMutation({
-    mutationFn: async (id: number) => {
-      const res = await apiRequest("DELETE", `/api/admin/accident-types/${id}`);
-      return res.json();
-    },
-    onSuccess: () => {
-      toast({ title: "Tipo de accidente eliminado correctamente" });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/accident-types"] });
-    },
-    onError: (error: Error) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    }
-  });
-
-  // Mutaciones para áreas personalizables
-  const createCustomAreaMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const res = await apiRequest("POST", "/api/admin/custom-areas", data);
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || "Error al crear área");
-      }
-      return res.json();
-    },
-    onSuccess: () => {
-      toast({ title: "Área creada correctamente" });
-      setShowCustomAreaModal(false);
-      setCustomAreaForm({ name: "", displayName: "", description: "" });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/custom-areas"] });
-    },
-    onError: (error: Error) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    }
-  });
-
-  const updateCustomAreaMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const { id, ...updateData } = data;
-      const res = await apiRequest("PUT", `/api/admin/custom-areas/${id}`, updateData);
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || "Error al actualizar área");
-      }
-      return res.json();
-    },
-    onSuccess: () => {
-      toast({ title: "Área actualizada correctamente" });
-      setShowCustomAreaModal(false);
-      setEditingCustomArea(null);
-      setCustomAreaForm({ name: "", displayName: "", description: "" });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/custom-areas"] });
-    },
-    onError: (error: Error) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    }
-  });
-
-  const deleteCustomAreaMutation = useMutation({
-    mutationFn: async (id: number) => {
-      const res = await apiRequest("DELETE", `/api/admin/custom-areas/${id}`);
-      return res.json();
-    },
-    onSuccess: () => {
-      toast({ title: "Área eliminada correctamente" });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/custom-areas"] });
-    },
-    onError: (error: Error) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    }
-  });
-
 
   const openEditModal = (u: User) => {
     setEditUser(u);
@@ -702,68 +545,6 @@ export default function AdminPage() {
     }
   };
 
-  // Handlers for Accident Types
-  const handleAccidentTypeFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setAccidentTypeForm({ ...accidentTypeForm, [e.target.name]: e.target.value });
-  };
-
-  const openAccidentTypeModal = (type?: AccidentType) => {
-    if (type) {
-      setEditingAccidentType(type);
-      setAccidentTypeForm({ name: type.name, description: type.description || "" });
-    } else {
-      setEditingAccidentType(null);
-      setAccidentTypeForm({ name: "", description: "" });
-    }
-    setShowAccidentTypeModal(true);
-  };
-
-  const handleSaveAccidentType = () => {
-    if (!accidentTypeForm.name.trim()) {
-      toast({ title: "Error de validación", description: "El nombre del tipo de accidente es requerido", variant: "destructive" });
-      return;
-    }
-
-    if (editingAccidentType) {
-      updateAccidentTypeMutation.mutate({ id: editingAccidentType.id, ...accidentTypeForm });
-    } else {
-      createAccidentTypeMutation.mutate(accidentTypeForm);
-    }
-  };
-
-  // Handlers for Custom Areas
-  const handleCustomAreaFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setCustomAreaForm({ ...customAreaForm, [e.target.name]: e.target.value });
-  };
-
-  const openCustomAreaModal = (area?: CustomArea) => {
-    if (area) {
-      setEditingCustomArea(area);
-      setCustomAreaForm({ name: area.name, displayName: area.displayName, description: area.description || "" });
-    } else {
-      setEditingCustomArea(null);
-      setCustomAreaForm({ name: "", displayName: "", description: "" });
-    }
-    setShowCustomAreaModal(true);
-  };
-
-  const handleSaveCustomArea = () => {
-    if (!customAreaForm.name.trim() || !customAreaForm.displayName.trim()) {
-      toast({ title: "Error de validación", description: "El nombre y el nombre a mostrar del área son requeridos", variant: "destructive" });
-      return;
-    }
-
-    if (editingCustomArea) {
-      updateCustomAreaMutation.mutate({ id: editingCustomArea.id, ...customAreaForm });
-    } else {
-      createCustomAreaMutation.mutate(customAreaForm);
-    }
-  };
-
-  // Temporary state for user form area to match the original structure, will be replaced by actual form state
-  const userForm = { area: createForm.area }; 
-  const editUserForm = { area: editForm.area };
-
   return (
     <Layout>
       <div className="space-y-6">
@@ -780,7 +561,61 @@ export default function AdminPage() {
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {/* Previous stats components can be uncommented if needed */}
+        {/* <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Pedidos Activos</p>
+                <p className="text-2xl font-bold text-gray-900">{activeOrders.length}</p>
+              </div>
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <Package className="text-blue-600" size={24} />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Finalizados Hoy</p>
+                <p className="text-2xl font-bold text-gray-900">{todayCompletedOrders.length}</p>
+              </div>
+              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                <TrendingUp className="text-green-600" size={24} />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Completados</p>
+                <p className="text-2xl font-bold text-gray-900">{completedOrders.length}</p>
+              </div>
+              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                <Package className="text-purple-600" size={24} />
+              </div>
+            </div>
+          </CardContent>
+        </Card> */}
+
+        {/* <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Usuarios Registrados</p>
+                <p className="text-2xl font-bold text-gray-900">{users.length}</p>
+              </div>
+              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                <Users className="text-orange-600" size={24} />
+              </div>
+            </div>
+          </CardContent>
+        </Card> */}
       </div>
 
         {/* Gestión de Usuarios Mejorada */}
@@ -826,13 +661,11 @@ export default function AdminPage() {
                       <Label>Área</Label>
                       <Select value={createForm.area} onValueChange={val => setCreateForm({ ...createForm, area: val })}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Seleccionar área..." />
+                          <SelectValue placeholder="Seleccionar área" />
                         </SelectTrigger>
                         <SelectContent>
-                          {customAreas.filter(area => area.isActive).map((area) => (
-                            <SelectItem key={area.id} value={area.name}>
-                              {area.displayName}
-                            </SelectItem>
+                          {["admin","corte","bordado","ensamble","plancha","calidad","envios", "diseño", "patronaje", "almacen", "operaciones"].map(a => (
+                            <SelectItem key={a} value={a}>{getAreaDisplayName(a)}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -932,233 +765,6 @@ export default function AdminPage() {
               <div className="text-center py-8 px-6">
                 <Users className="mx-auto h-12 w-12 text-gray-400 mb-4" />
                 <p className="text-gray-500 dark:text-gray-400">No hay usuarios registrados.</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Gestión de Tipos de Accidente */}
-        <Card className="border-0 shadow-lg bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm dark:border-slate-700">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex flex-col space-y-1">
-                <div className="flex items-center space-x-2">
-                  <AlertTriangle className="h-5 w-5 text-orange-600" />
-                  <span>Tipos de Accidente</span>
-                </div>
-                <h4 className="text-sm text-muted-foreground">Tipos registrados: {accidentTypes.length}</h4>
-              </CardTitle>
-              <Dialog open={showAccidentTypeModal} onOpenChange={setShowAccidentTypeModal}>
-                <DialogTrigger asChild>
-                  <Button className="flex items-center space-x-2" onClick={() => openAccidentTypeModal()}>
-                    <Plus className="h-4 w-4" />
-                    <span>Nuevo Tipo de Accidente</span>
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>{editingAccidentType ? "Editar Tipo de Accidente" : "Crear Nuevo Tipo de Accidente"}</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <Label>Nombre del Tipo de Accidente</Label>
-                      <Input 
-                        name="name"
-                        value={accidentTypeForm.name} 
-                        onChange={handleAccidentTypeFormChange} 
-                        placeholder="Ej: Caída de objetos"
-                      />
-                    </div>
-                    <div>
-                      <Label>Descripción (Opcional)</Label>
-                      <Input 
-                        name="description"
-                        value={accidentTypeForm.description} 
-                        onChange={handleAccidentTypeFormChange} 
-                        placeholder="Detalles sobre el tipo de accidente"
-                      />
-                    </div>
-                    <div className="flex justify-end gap-2">
-                      <Button variant="outline" onClick={() => setShowAccidentTypeModal(false)}>
-                        Cancelar
-                      </Button>
-                      <Button onClick={handleSaveAccidentType} disabled={createAccidentTypeMutation.isPending || updateAccidentTypeMutation.isPending}>
-                        {editingAccidentType ? (updateAccidentTypeMutation.isPending ? "Actualizando..." : "Guardar Cambios") : (createAccidentTypeMutation.isPending ? "Creando..." : "Crear Tipo de Accidente")}
-                      </Button>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            {accidentTypes.length > 0 ? (
-              <div className="max-h-96 overflow-y-auto border-t dark:border-slate-700">
-                <Table>
-                  <TableHeader className="sticky top-0 z-10">
-                    <TableRow className="bg-gray-50 dark:bg-slate-800 border-b dark:border-slate-700">
-                      <TableHead className="font-semibold text-gray-900 dark:text-gray-100">ID</TableHead>
-                      <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Nombre</TableHead>
-                      <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Descripción</TableHead>
-                      <TableHead className="font-semibold text-center text-gray-900 dark:text-gray-100">Acciones</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {accidentTypes.map(type => (
-                      <TableRow key={type.id} className="hover:bg-gray-50 dark:hover:bg-slate-700 border-b dark:border-slate-700">
-                        <TableCell className="font-medium text-gray-900 dark:text-gray-100 px-4 py-3">#{type.id}</TableCell>
-                        <TableCell className="text-gray-900 dark:text-gray-100 px-4 py-3">{type.name}</TableCell>
-                        <TableCell className="text-gray-600 dark:text-gray-400 px-4 py-3">{type.description || '-'}</TableCell>
-                        <TableCell className="px-4 py-3">
-                          <div className="flex justify-center space-x-2">
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              onClick={() => openAccidentTypeModal(type)}
-                              className="flex items-center space-x-1 h-8 px-2"
-                            >
-                              <Edit2 className="w-3 h-3" />
-                              <span className="text-xs">Editar</span>
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="destructive" 
-                              onClick={() => deleteAccidentTypeMutation.mutate(type.id)}
-                              className="flex items-center space-x-1 h-8 px-2"
-                            >
-                              <Trash2 className="w-3 h-3" />
-                              <span className="text-xs">Eliminar</span>
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            ) : (
-              <div className="text-center py-8 px-6">
-                <AlertTriangle className="mx-auto h-12 w-12 text-orange-400 mb-4" />
-                <p className="text-gray-500 dark:text-gray-400">No hay tipos de accidente registrados.</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Gestión de Áreas Personalizables */}
-        <Card className="border-0 shadow-lg bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm dark:border-slate-700">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex flex-col space-y-1">
-                <div className="flex items-center space-x-2">
-                  <Package className="h-5 w-5 text-blue-600" />
-                  <span>Áreas Personalizables</span>
-                </div>
-                <h4 className="text-sm text-muted-foreground">Áreas registradas: {customAreas.length}</h4>
-              </CardTitle>
-              <Dialog open={showCustomAreaModal} onOpenChange={setShowCustomAreaModal}>
-                <DialogTrigger asChild>
-                  <Button className="flex items-center space-x-2" onClick={() => openCustomAreaModal()}>
-                    <Plus className="h-4 w-4" />
-                    <span>Nueva Área</span>
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>{editingCustomArea ? "Editar Área" : "Crear Nueva Área"}</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <Label>Nombre del Área (interno)</Label>
-                      <Input 
-                        name="name"
-                        value={customAreaForm.name} 
-                        onChange={handleCustomAreaFormChange} 
-                        placeholder="Ej: Diseño"
-                      />
-                    </div>
-                    <div>
-                      <Label>Nombre a Mostrar</Label>
-                      <Input 
-                        name="displayName"
-                        value={customAreaForm.displayName} 
-                        onChange={handleCustomAreaFormChange} 
-                        placeholder="Ej: Área de Diseño"
-                      />
-                    </div>
-                    <div>
-                      <Label>Descripción (Opcional)</Label>
-                      <Input 
-                        name="description"
-                        value={customAreaForm.description} 
-                        onChange={handleCustomAreaFormChange} 
-                        placeholder="Detalles sobre el área"
-                      />
-                    </div>
-                    <div className="flex justify-end gap-2">
-                      <Button variant="outline" onClick={() => setShowCustomAreaModal(false)}>
-                        Cancelar
-                      </Button>
-                      <Button onClick={handleSaveCustomArea} disabled={createCustomAreaMutation.isPending || updateCustomAreaMutation.isPending}>
-                        {editingCustomArea ? (updateCustomAreaMutation.isPending ? "Actualizando..." : "Guardar Cambios") : (createCustomAreaMutation.isPending ? "Creando..." : "Crear Área")}
-                      </Button>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            {customAreas.length > 0 ? (
-              <div className="max-h-96 overflow-y-auto border-t dark:border-slate-700">
-                <Table>
-                  <TableHeader className="sticky top-0 z-10">
-                    <TableRow className="bg-gray-50 dark:bg-slate-800 border-b dark:border-slate-700">
-                      <TableHead className="font-semibold text-gray-900 dark:text-gray-100">ID</TableHead>
-                      <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Nombre (interno)</TableHead>
-                      <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Nombre a Mostrar</TableHead>
-                      <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Descripción</TableHead>
-                      <TableHead className="font-semibold text-center text-gray-900 dark:text-gray-100">Acciones</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {customAreas.map(area => (
-                      <TableRow key={area.id} className="hover:bg-gray-50 dark:hover:bg-slate-700 border-b dark:border-slate-700">
-                        <TableCell className="font-medium text-gray-900 dark:text-gray-100 px-4 py-3">#{area.id}</TableCell>
-                        <TableCell className="text-gray-900 dark:text-gray-100 px-4 py-3">{area.name}</TableCell>
-                        <TableCell className="text-gray-900 dark:text-gray-100 px-4 py-3">{area.displayName}</TableCell>
-                        <TableCell className="text-gray-600 dark:text-gray-400 px-4 py-3">{area.description || '-'}</TableCell>
-                        <TableCell className="px-4 py-3">
-                          <div className="flex justify-center space-x-2">
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              onClick={() => openCustomAreaModal(area)}
-                              className="flex items-center space-x-1 h-8 px-2"
-                            >
-                              <Edit2 className="w-3 h-3" />
-                              <span className="text-xs">Editar</span>
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="destructive" 
-                              onClick={() => deleteCustomAreaMutation.mutate(area.id)}
-                              className="flex items-center space-x-1 h-8 px-2"
-                            >
-                              <Trash2 className="w-3 h-3" />
-                              <span className="text-xs">Eliminar</span>
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            ) : (
-              <div className="text-center py-8 px-6">
-                <Package className="mx-auto h-12 w-12 text-blue-400 mb-4" />
-                <p className="text-gray-500 dark:text-gray-400">No hay áreas personalizadas registradas.</p>
               </div>
             )}
           </CardContent>
@@ -1513,14 +1119,10 @@ export default function AdminPage() {
               <div><Label>Username</Label><Input value={editForm.username} onChange={e => setEditForm({ ...editForm, username: e.target.value })} /></div>
               <div><Label>Área</Label>
                 <Select value={editForm.area} onValueChange={val => setEditForm({ ...editForm, area: val })}>
-                  <SelectTrigger><SelectValue placeholder="Seleccionar área..." /></SelectTrigger>
-                  <SelectContent>
-                    {customAreas.filter(area => area.isActive).map((area) => (
-                      <SelectItem key={area.id} value={area.name}>
-                        {area.displayName}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{["admin","corte","bordado","ensamble","plancha","calidad","envios", "diseño", "patronaje", "almacen", "operaciones"].map(a => (
+                    <SelectItem key={a} value={a}>{getAreaDisplayName(a)}</SelectItem>
+                  ))}</SelectContent>
                 </Select>
               </div>
               <div className="flex justify-end gap-2"><Button variant="outline" onClick={() => setShowEditModal(false)}>Cancelar</Button><Button onClick={handleSaveEdit}>Guardar Cambios</Button></div>
@@ -1688,7 +1290,7 @@ export default function AdminPage() {
                 <p className="text-blue-700 text-sm mb-2">
                   Esta acción creará un respaldo completo de toda la base de datos incluyendo:
                 </p>
-                <ul className="text-blue-700 text-sm list-disc list-inside space-1">
+                <ul className="text-blue-700 text-sm list-disc list-inside space-y-1">
                   <li>Todos los usuarios y configuraciones</li>
                   <li>Todos los pedidos y su historial</li>
                   <li>Todas las reposiciones y transferencias</li>

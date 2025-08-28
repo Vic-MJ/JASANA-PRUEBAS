@@ -45,7 +45,7 @@ export function RecentActivity() {
 
   return (
     <div className="grid gap-6 md:grid-cols-2">
-      <Card>
+      {/* <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Package className="w-5 h-5 text-blue-600" />
@@ -78,7 +78,7 @@ export function RecentActivity() {
             )}
           </div>
         </CardContent>
-      </Card>
+      </Card> */}
 
       <Card>
         <CardHeader>
