@@ -15,6 +15,9 @@ import {
   adminPasswords,
   agendaEvents,
   documents,
+  catalogAreas,
+  catalogDamageCausers,
+  catalogAccidentTypes,
   type User,
   type InsertUser,
   type Order,
@@ -37,6 +40,12 @@ import {
   type InsertAdminPassword,
   type AgendaEvent,
   type InsertAgendaEvent,
+  type CatalogArea,
+  type InsertCatalogArea,
+  type CatalogDamageCauser,
+  type InsertCatalogDamageCauser,
+  type CatalogAccidentType,
+  type InsertCatalogAccidentType,
   type Area,
   type RepositionType,
   type RepositionStatus
@@ -3864,6 +3873,69 @@ async createReposition(data: InsertReposition & { folio: string, productos?: any
        throw new Error(`Error al restaurar el sistema completo: ${error.message}`);
      }
    }
+
+  async getCatalogAreas(): Promise<CatalogArea[]> {
+    return await db.select().from(catalogAreas).where(eq(catalogAreas.isActive, true)).orderBy(asc(catalogAreas.displayOrder));
+  }
+
+  async createCatalogArea(data: InsertCatalogArea): Promise<CatalogArea> {
+    const [area] = await db.insert(catalogAreas).values(data).returning();
+    return area;
+  }
+
+  async updateCatalogArea(id: number, data: Partial<InsertCatalogArea>): Promise<CatalogArea> {
+    const [area] = await db.update(catalogAreas)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(catalogAreas.id, id))
+      .returning();
+    return area;
+  }
+
+  async deleteCatalogArea(id: number): Promise<void> {
+    await db.delete(catalogAreas).where(eq(catalogAreas.id, id));
+  }
+
+  async getCatalogDamageCausers(): Promise<CatalogDamageCauser[]> {
+    return await db.select().from(catalogDamageCausers).where(eq(catalogDamageCausers.isActive, true)).orderBy(asc(catalogDamageCausers.displayOrder));
+  }
+
+  async createCatalogDamageCauser(data: InsertCatalogDamageCauser): Promise<CatalogDamageCauser> {
+    const [causer] = await db.insert(catalogDamageCausers).values(data).returning();
+    return causer;
+  }
+
+  async updateCatalogDamageCauser(id: number, data: Partial<InsertCatalogDamageCauser>): Promise<CatalogDamageCauser> {
+    const [causer] = await db.update(catalogDamageCausers)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(catalogDamageCausers.id, id))
+      .returning();
+    return causer;
+  }
+
+  async deleteCatalogDamageCauser(id: number): Promise<void> {
+    await db.delete(catalogDamageCausers).where(eq(catalogDamageCausers.id, id));
+  }
+
+  async getCatalogAccidentTypes(): Promise<CatalogAccidentType[]> {
+    return await db.select().from(catalogAccidentTypes).where(eq(catalogAccidentTypes.isActive, true)).orderBy(asc(catalogAccidentTypes.displayOrder));
+  }
+
+  async createCatalogAccidentType(data: InsertCatalogAccidentType): Promise<CatalogAccidentType> {
+    const [type] = await db.insert(catalogAccidentTypes).values(data).returning();
+    return type;
+  }
+
+  async updateCatalogAccidentType(id: number, data: Partial<InsertCatalogAccidentType>): Promise<CatalogAccidentType> {
+    const [type] = await db.update(catalogAccidentTypes)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(catalogAccidentTypes.id, id))
+      .returning();
+    return type;
+  }
+
+  async deleteCatalogAccidentType(id: number): Promise<void> {
+    await db.delete(catalogAccidentTypes).where(eq(catalogAccidentTypes.id, id));
+  }
 }
 
 export const storage = new DatabaseStorage();
