@@ -97,6 +97,13 @@ function AppContent() {
     }
   }, []);
 
+  // Cambia esta variable a `true` para activar modo mantenimiento
+  const isMaintenanceMode = false;
+
+  if (isMaintenanceMode) {
+    return <MaintenanceScreen />;
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Switch>
@@ -104,7 +111,6 @@ function AppContent() {
         <Route path="/maintenance" component={MaintenanceScreen} />
         <Route path="/">
           {({ params }) => {
-            // Redirect root to dashboard if authenticated, otherwise to auth
             if (isLoading) return null;
             if (user) {
               window.history.replaceState({}, '', '/dashboard');

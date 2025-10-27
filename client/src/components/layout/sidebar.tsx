@@ -161,8 +161,8 @@ export function CustomSidebar({ onShowNotifications, onCreateOrder, onCreateRepo
             <h1 className="text-xl font-bold bg-gradient-to-r from-purple-500 via-pink-400 to-purple-700 bg-clip-text text-transparent">
               JASANA
             </h1>
-            <p className="text-xs text-muted-foreground">Sistema de Pedidos</p>
-            <p className="text-xs text-muted-foreground">V3.0.11 Sp25</p>
+            <p className="text-xs text-muted-foreground">V3.1.11 Sp25</p>
+            <p className="text-xs text-muted-foreground">&copy; 2025 Desarrollado Por ClerDevs-Code</p>
           </div>
           <SidebarTrigger className="ml-auto h-6 w-6 group-data-[collapsible=icon]:ml-0" />
         </div>
