@@ -134,7 +134,7 @@ import { useEffect } from 'react';
 
     const { register, handleSubmit, watch, setValue, formState: { errors }, trigger } = useForm<RepositionFormData>({
       defaultValues: {
-        type: 'repocision',
+        type: 'reposición',
         urgencia: 'intermedio',
         solicitanteNombre: '',
         solicitanteArea: '',
@@ -168,7 +168,7 @@ import { useEffect } from 'react';
         setValue('volverHacer', existingReposition.volverHacer || '');
         setValue('materialesImplicados', existingReposition.materialesImplicados || '');
 
-        if (existingReposition.type === 'repocision') {
+        if (existingReposition.type === 'reposición') {
           // Si hay productos adicionales, usarlos; si no, usar los datos principales
           if (existingProducts && existingProducts.length > 0) {
             const loadedProductos = existingProducts.map((product: any, index: number) => ({
@@ -397,7 +397,7 @@ import { useEffect } from 'react';
       }
 
       // Validación específica para reposiciones
-      if (data.type === 'repocision') {
+      if (data.type === 'reposición') {
         // Validate products and their pieces
         for (let i = 0; i < productos.length; i++) {
           const producto = productos[i];
@@ -495,7 +495,7 @@ import { useEffect } from 'react';
       // No necesita conversión a Date object
 
       // Solo mapear datos de productos para reposiciones
-      if (data.type === 'repocision' && productos.length > 0) {
+      if (data.type === 'reposición' && productos.length > 0) {
         const firstProduct = productos[0];
         formDataToSend = {
           ...formDataToSend,
@@ -541,12 +541,12 @@ import { useEffect } from 'react';
               <CardContent>
                 <RadioGroup 
                   value={watch('type')} 
-                  onValueChange={(value: 'repocision' | 'reproceso') => setValue('type', value)}
+                  onValueChange={(value: 'reposición' | 'reproceso') => setValue('type', value)}
                   className="flex space-x-6"
                 >
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="repocision" id="repocision" />
-                    <Label htmlFor="repocision">Reposición</Label>
+                    <RadioGroupItem value="reposición" id="reposición" />
+                    <Label htmlFor="reposición">Reposición</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="reproceso" id="reproceso" />
@@ -710,7 +710,7 @@ import { useEffect } from 'react';
             </Card>
 
             {/* Información del Producto - Solo para reposiciones */}
-            {watch('type') === 'repocision' && (
+            {watch('type') === 'reposición' && (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex justify-between items-center">
@@ -915,7 +915,7 @@ import { useEffect } from 'react';
             )}
 
             {/* Cálculo de Recursos - Solo para área de corte y reposiciones */}
-            {watch('currentArea') === 'corte' && watch('type') === 'repocision' && (
+            {watch('currentArea') === 'corte' && watch('type') === 'reposición' && (
               <Card>
                 <CardHeader>
                   <CardTitle>Cálculo de Recursos</CardTitle>
@@ -996,7 +996,7 @@ import { useEffect } from 'react';
 
             {/* Alerta de tiempo para reposiciones */}
             {(() => {
-              if (watch('type') === 'repocision' && !repositionId) {
+              if (watch('type') === 'reposición' && !repositionId) {
                 const now = new Date();
                 const currentHour = now.getHours();
                 if (currentHour >= 14) {

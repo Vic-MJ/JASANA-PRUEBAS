@@ -30,7 +30,6 @@ export function registerRoutes(app: Express): Server {
   registerAgendaRoutes(app);
   registerAlmacenRoutes(app);
   registerMetricsRoutes(app);
-  registerCatalogRoutes(app);
 
   const httpServer = configureWebSocket(app);
   return httpServer;
@@ -1256,7 +1255,7 @@ function registerRepositionRoutes(app: Express) {
 
       // Collect all pieces from all products for reposiciones, or use direct pieces for reprocesos
       let allPieces = [];
-      if (repositionData.type === 'repocision' && productos && productos.length > 0) {
+      if (repositionData.type === 'reposición' && productos && productos.length > 0) {
         allPieces = productos.flatMap((producto: any) => producto.pieces || []);
       } else if (pieces && pieces.length > 0) {
         allPieces = pieces;
@@ -2423,149 +2422,6 @@ function registerMetricsRoutes(app: Express) {
       res.status(500).json({ error: 'Error al descargar el archivo' });
     }
   });
-}
-
-function registerCatalogRoutes(app: Express) {
-  const router = Router();
-
-  router.get("/:type", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).json({ message: "Autenticación requerida" });
-
-    try {
-      const { type } = req.params;
-      let items;
-
-      switch (type) {
-        case 'areas':
-          items = await storage.getCatalogAreas();
-          break;
-        case 'damage-causers':
-          items = await storage.getCatalogDamageCausers();
-          break;
-        case 'accident-types':
-          items = await storage.getCatalogAccidentTypes();
-          break;
-        default:
-          return res.status(400).json({ message: "Tipo de catálogo inválido" });
-      }
-
-      res.json(items);
-    } catch (error) {
-      console.error('Get catalog error:', error);
-      res.status(500).json({ message: "Error al obtener catálogo" });
-    }
-  });
-
-  router.post("/:type", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).json({ message: "Autenticación requerida" });
-
-    try {
-      const user = req.user!;
-      if (user.area !== 'admin') {
-        return res.status(403).json({ message: "Solo administradores pueden crear elementos" });
-      }
-
-      const { type } = req.params;
-      const data = req.body;
-      let item;
-
-      switch (type) {
-        case 'areas':
-          item = await storage.createCatalogArea(data);
-          break;
-        case 'damage-causers':
-          item = await storage.createCatalogDamageCauser(data);
-          break;
-        case 'accident-types':
-          item = await storage.createCatalogAccidentType(data);
-          break;
-        default:
-          return res.status(400).json({ message: "Tipo de catálogo inválido" });
-      }
-
-      res.status(201).json(item);
-    } catch (error) {
-      console.error('Create catalog item error:', error);
-      res.status(400).json({ message: "Error al crear elemento" });
-    }
-  });
-
-  router.put("/:type/:id", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).json({ message: "Autenticación requerida" });
-
-    try {
-      const user = req.user!;
-      if (user.area !== 'admin') {
-        return res.status(403).json({ message: "Solo administradores pueden actualizar elementos" });
-      }
-
-      const { type, id } = req.params;
-      const itemId = parseInt(id);
-      if (isNaN(itemId)) {
-        return res.status(400).json({ message: "ID inválido" });
-      }
-
-      const data = req.body;
-      let item;
-
-      switch (type) {
-        case 'areas':
-          item = await storage.updateCatalogArea(itemId, data);
-          break;
-        case 'damage-causers':
-          item = await storage.updateCatalogDamageCauser(itemId, data);
-          break;
-        case 'accident-types':
-          item = await storage.updateCatalogAccidentType(itemId, data);
-          break;
-        default:
-          return res.status(400).json({ message: "Tipo de catálogo inválido" });
-      }
-
-      res.json(item);
-    } catch (error) {
-      console.error('Update catalog item error:', error);
-      res.status(400).json({ message: "Error al actualizar elemento" });
-    }
-  });
-
-  router.delete("/:type/:id", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).json({ message: "Autenticación requerida" });
-
-    try {
-      const user = req.user!;
-      if (user.area !== 'admin') {
-        return res.status(403).json({ message: "Solo administradores pueden eliminar elementos" });
-      }
-
-      const { type, id } = req.params;
-      const itemId = parseInt(id);
-      if (isNaN(itemId)) {
-        return res.status(400).json({ message: "ID inválido" });
-      }
-
-      switch (type) {
-        case 'areas':
-          await storage.deleteCatalogArea(itemId);
-          break;
-        case 'damage-causers':
-          await storage.deleteCatalogDamageCauser(itemId);
-          break;
-        case 'accident-types':
-          await storage.deleteCatalogAccidentType(itemId);
-          break;
-        default:
-          return res.status(400).json({ message: "Tipo de catálogo inválido" });
-      }
-
-      res.json({ message: "Elemento eliminado correctamente" });
-    } catch (error) {
-      console.error('Delete catalog item error:', error);
-      res.status(400).json({ message: "Error al eliminar elemento" });
-    }
-  });
-
-  app.use("/api/catalogs", router);
 }
 
 // Corrected timer validation logic in reposition routes to accurately determine when creator areas should register time.

@@ -15,9 +15,6 @@ import {
   adminPasswords,
   agendaEvents,
   documents,
-  catalogAreas,
-  catalogDamageCausers,
-  catalogAccidentTypes,
   type User,
   type InsertUser,
   type Order,
@@ -40,12 +37,6 @@ import {
   type InsertAdminPassword,
   type AgendaEvent,
   type InsertAgendaEvent,
-  type CatalogArea,
-  type InsertCatalogArea,
-  type CatalogDamageCauser,
-  type InsertCatalogDamageCauser,
-  type CatalogAccidentType,
-  type InsertCatalogAccidentType,
   type Area,
   type RepositionType,
   type RepositionStatus
@@ -2899,12 +2890,58 @@ async createReposition(data: InsertReposition & { folio: string, productos?: any
         percentage: totalCauses > 0 ? Math.round((item.count / totalCauses) * 100) : 0
       }));
 
-      console.log('Final metrics result:', { byArea, byAreaAndType, byCause, total: totalRepositions });
+      // Agrupar por área causante del daño
+      const byCausativeAreaQuery = await db.select({
+        area: repositions.areaCausanteDano,
+        type: repositions.type,
+        count: sql<number>`COUNT(*)::int`
+      })
+      .from(repositions)
+      .where(and(
+        gte(repositions.createdAt, startDate),
+        lte(repositions.createdAt, endDate),
+        ne(repositions.status, 'eliminado' as RepositionStatus),
+        isNotNull(repositions.areaCausanteDano)
+      ))
+      .groupBy(repositions.areaCausanteDano, repositions.type);
+
+      const causativeAreaMap = new Map<string, { count: number, reposiciones: number, reprocesos: number }>();
+
+      byCausativeAreaQuery.forEach(item => {
+        const area = item.area || 'Sin área';
+        if (!causativeAreaMap.has(area)) {
+          causativeAreaMap.set(area, { count: 0, reposiciones: 0, reprocesos: 0 });
+        }
+        const areaData = causativeAreaMap.get(area)!;
+        areaData.count += item.count;
+
+        if (item.type === 'repocision'){
+          areaData.reposiciones += item.count;
+        } else if (item.type === 'reproceso') {
+          areaData.reprocesos += item.count;
+        }
+      });
+
+      const totalCausativeArea = Array.from(causativeAreaMap.values()).reduce((sum, data) => sum + data.count, 0);
+
+      const byCausativeArea = Array.from(causativeAreaMap.entries()).map(([area, data]) => {
+        const percentage = totalCausativeArea > 0 ? Math.round((data.count / totalCausativeArea) * 100) : 0;
+        return {
+          area,
+          count: data.count,
+          reposiciones: data.reposiciones,
+          reprocesos: data.reprocesos,
+          percentage
+        };
+      });
+
+      console.log('Final metrics result:', { byArea, byAreaAndType, byCause, byCausativeArea, total: totalRepositions });
 
       return {
         byArea,
         byAreaAndType,
         byCause,
+        byCausativeArea,
         total: totalRepositions
       };
     } catch (error) {
@@ -3049,8 +3086,8 @@ async createReposition(data: InsertReposition & { folio: string, productos?: any
     const workbook = new ExcelJS.Workbook();
     const metrics = await this.getMonthlyMetrics(month, year);
 
-    // Hoja 1: Reposiciones por área
-    const worksheet1 = workbook.addWorksheet('Por Área');
+    // Hoja 1: Reposiciones por área solicitante
+    const worksheet1 = workbook.addWorksheet('Por Área Solicitante');
     worksheet1.columns = [
       { header: 'Área', key: 'area', width: 15 },
       { header: 'Total', key: 'count', width: 15 },
@@ -3083,8 +3120,30 @@ async createReposition(data: InsertReposition & { folio: string, productos?: any
       worksheet2.addRow(item);
     });
 
+    // Hoja 3: Reposiciones por área causante del daño
+    const worksheet3 = workbook.addWorksheet('Por Área Causante');
+    worksheet3.columns = [
+      { header: 'Área Causante', key: 'area', width: 20 },
+      { header: 'Total', key: 'count', width: 15 },
+      { header: 'Reposiciones', key: 'reposiciones', width: 15 },
+      { header: 'Reprocesos', key: 'reprocesos', width: 15 },
+      { header: 'Porcentaje del Total', key: 'percentage', width: 18 }
+    ];
+
+    if (metrics.byCausativeArea) {
+      metrics.byCausativeArea.forEach((item: any) => {
+        worksheet3.addRow({
+          area: item.area,
+          count: item.count,
+          reposiciones: item.reposiciones || 0,
+          reprocesos: item.reprocesos || 0,
+          percentage: `${item.percentage}%`
+        });
+      });
+    }
+
     // Estilo para headers
-    [worksheet1, worksheet2].forEach(ws => {
+    [worksheet1, worksheet2, worksheet3].forEach(ws => {
       ws.getRow(1).font = { bold: true };
       ws.getRow(1).fill = {
         type: 'pattern',
@@ -3873,69 +3932,6 @@ async createReposition(data: InsertReposition & { folio: string, productos?: any
        throw new Error(`Error al restaurar el sistema completo: ${error.message}`);
      }
    }
-
-  async getCatalogAreas(): Promise<CatalogArea[]> {
-    return await db.select().from(catalogAreas).where(eq(catalogAreas.isActive, true)).orderBy(asc(catalogAreas.displayOrder));
-  }
-
-  async createCatalogArea(data: InsertCatalogArea): Promise<CatalogArea> {
-    const [area] = await db.insert(catalogAreas).values(data).returning();
-    return area;
-  }
-
-  async updateCatalogArea(id: number, data: Partial<InsertCatalogArea>): Promise<CatalogArea> {
-    const [area] = await db.update(catalogAreas)
-      .set({ ...data, updatedAt: new Date() })
-      .where(eq(catalogAreas.id, id))
-      .returning();
-    return area;
-  }
-
-  async deleteCatalogArea(id: number): Promise<void> {
-    await db.delete(catalogAreas).where(eq(catalogAreas.id, id));
-  }
-
-  async getCatalogDamageCausers(): Promise<CatalogDamageCauser[]> {
-    return await db.select().from(catalogDamageCausers).where(eq(catalogDamageCausers.isActive, true)).orderBy(asc(catalogDamageCausers.displayOrder));
-  }
-
-  async createCatalogDamageCauser(data: InsertCatalogDamageCauser): Promise<CatalogDamageCauser> {
-    const [causer] = await db.insert(catalogDamageCausers).values(data).returning();
-    return causer;
-  }
-
-  async updateCatalogDamageCauser(id: number, data: Partial<InsertCatalogDamageCauser>): Promise<CatalogDamageCauser> {
-    const [causer] = await db.update(catalogDamageCausers)
-      .set({ ...data, updatedAt: new Date() })
-      .where(eq(catalogDamageCausers.id, id))
-      .returning();
-    return causer;
-  }
-
-  async deleteCatalogDamageCauser(id: number): Promise<void> {
-    await db.delete(catalogDamageCausers).where(eq(catalogDamageCausers.id, id));
-  }
-
-  async getCatalogAccidentTypes(): Promise<CatalogAccidentType[]> {
-    return await db.select().from(catalogAccidentTypes).where(eq(catalogAccidentTypes.isActive, true)).orderBy(asc(catalogAccidentTypes.displayOrder));
-  }
-
-  async createCatalogAccidentType(data: InsertCatalogAccidentType): Promise<CatalogAccidentType> {
-    const [type] = await db.insert(catalogAccidentTypes).values(data).returning();
-    return type;
-  }
-
-  async updateCatalogAccidentType(id: number, data: Partial<InsertCatalogAccidentType>): Promise<CatalogAccidentType> {
-    const [type] = await db.update(catalogAccidentTypes)
-      .set({ ...data, updatedAt: new Date() })
-      .where(eq(catalogAccidentTypes.id, id))
-      .returning();
-    return type;
-  }
-
-  async deleteCatalogAccidentType(id: number): Promise<void> {
-    await db.delete(catalogAccidentTypes).where(eq(catalogAccidentTypes.id, id));
-  }
 }
 
 export const storage = new DatabaseStorage();

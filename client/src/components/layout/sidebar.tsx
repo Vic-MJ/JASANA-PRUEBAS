@@ -270,7 +270,7 @@ export function CustomSidebar({ onShowNotifications, onCreateOrder, onCreateRepo
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
-              <SidebarMenuItem>
+              {/* <SidebarMenuItem>
                 <SidebarMenuButton 
                   onClick={(e) => {
                     e.preventDefault();
@@ -295,7 +295,7 @@ export function CustomSidebar({ onShowNotifications, onCreateOrder, onCreateRepo
                     <span className="transition-colors duration-200 group-data-[collapsible=icon]:hidden">Historial</span>
                   </div>
                 </SidebarMenuButton>
-              </SidebarMenuItem>
+              </SidebarMenuItem> */}
 
               <SidebarMenuItem>
                 <SidebarMenuButton 

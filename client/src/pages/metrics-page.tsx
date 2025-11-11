@@ -329,7 +329,6 @@ export default function MetricsPage() {
                           cy="50%"
                           labelLine={false}
                           label={({ area, percentage }) => `${area}: ${percentage}%`}
-                          labelLine={false}
                           outerRadius={120}
                           fill="#8884d8"
                           dataKey="count"
@@ -401,19 +400,19 @@ export default function MetricsPage() {
                     <ResponsiveContainer width="100%" height={350}>
                       <BarChart data={monthlyMetrics.byCause}>
                         <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-slate-600" />
-                        <XAxis 
-                          dataKey="cause" 
-                          angle={-45} 
-                          textAnchor="end" 
-                          height={100} 
-                          tick={{ fontSize: 11, fill: 'currentColor' }} 
+                        <XAxis
+                          dataKey="cause"
+                          angle={-45}
+                          textAnchor="end"
+                          height={100}
+                          tick={{ fontSize: 11, fill: 'currentColor' }}
                           className="text-gray-700 dark:text-white"
                         />
-                        <YAxis 
-                          tick={{ fontSize: 12, fill: 'currentColor' }} 
+                        <YAxis
+                          tick={{ fontSize: 12, fill: 'currentColor' }}
                           className="text-gray-700 dark:text-white"
                         />
-                        
+
                         <Bar dataKey="count" fill="#EF4444" radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
@@ -437,6 +436,111 @@ export default function MetricsPage() {
                             </Badge>
                           </div>
                         </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Áreas Causantes del Daño */}
+          {monthlyMetrics?.byCausativeArea && monthlyMetrics.byCausativeArea.length > 0 && (
+            <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm dark:bg-slate-800/50 dark:border-slate-700">
+              <CardHeader className="bg-gradient-to-r from-yellow-500 to-amber-600 text-white rounded-t-lg">
+                <CardTitle className="text-2xl flex items-center">
+                  <Target className="h-6 w-6 mr-3" />
+                  Reposiciones por Área Causante del Daño - {currentMonthName}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-8">
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                  {/* Gráfico de barras */}
+                  <div className="bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-950/20 dark:to-amber-950/20 rounded-2xl p-6">
+                    <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-6 flex items-center">
+                      <BarChart3 className="h-5 w-5 mr-2 text-yellow-600" />
+                      Reposiciones por Área Responsable
+                    </h3>
+                    <ResponsiveContainer width="100%" height={350}>
+                      <BarChart data={monthlyMetrics.byCausativeArea}>
+                        <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-slate-600" />
+                        <XAxis
+                          dataKey="area"
+                          tick={{ fontSize: 12, fill: 'currentColor' }}
+                          className="text-gray-700 dark:text-white"
+                        />
+                        <YAxis
+                          tick={{ fontSize: 12, fill: 'currentColor' }}
+                          className="text-gray-700 dark:text-white"
+                        />
+                        <Tooltip />
+                        <Bar dataKey="count" fill="url(#colorGradientYellow)" radius={[4, 4, 0, 0]} />
+                        <defs>
+                          <linearGradient id="colorGradientYellow" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.8}/>
+                            <stop offset="95%" stopColor="#D97706" stopOpacity={0.8}/>
+                          </linearGradient>
+                        </defs>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  {/* Gráfico de pastel */}
+                  <div className="bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20 rounded-2xl p-6">
+                    <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-6">Distribución Porcentual por Área Responsable</h3>
+                    <ResponsiveContainer width="100%" height={350}>
+                      <PieChart>
+                        <Pie
+                          data={monthlyMetrics.byCausativeArea}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ area, percentage }) => `${area}: ${percentage}%`}
+                          outerRadius={120}
+                          fill="#8884d8"
+                          dataKey="count"
+                        >
+                          {monthlyMetrics.byCausativeArea.map((entry: any, index: number) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  {/* Tarjetas de estadísticas */}
+                  <div className="xl:col-span-2">
+                    <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-6">Estadísticas por Área Causante</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {monthlyMetrics.byCausativeArea.map((area: any, index: number) => (
+                        <Card key={area.area} className="border-0 shadow-md hover:shadow-lg transition-all duration-300 bg-white dark:bg-slate-800 dark:border-slate-700">
+                          <CardContent className="p-6">
+                            <div className="flex items-center justify-between">
+                              <div className="space-y-2">
+                                <p className="font-bold text-gray-800 dark:text-gray-100 text-lg">{area.area}</p>
+                                <div className="space-y-1">
+                                  <p className="text-sm text-gray-600 dark:text-gray-300">{area.count} reposiciones</p>
+                                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                                    Repos: {area.reposiciones || 0} | Reproc: {area.reprocesos || 0}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <Badge
+                                  style={{
+                                    backgroundColor: COLORS[index % COLORS.length],
+                                    fontSize: '16px',
+                                    padding: '8px 12px'
+                                  }}
+                                  className="text-white font-bold"
+                                >
+                                  {area.percentage}%
+                                </Badge>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
                       ))}
                     </div>
                   </div>

@@ -605,7 +605,7 @@ export function RepositionDetail({
                         // Determinar el tipo de pieza basado en el producto correspondiente
                         let tipoPieza = reposition.tipoPieza; // Default al primer producto
 
-                        if (reposition.type === 'repocision' && productos && productos.length > 0) {
+                        if (reposition.type === 'reposición' && productos && productos.length > 0) {
                           // Para reposiciones con múltiples productos, distribuir las piezas entre los productos
                           // Dividir las piezas proporcionalmente entre los productos disponibles
                           const piecesPerProduct = Math.ceil(pieces.length / productos.length);

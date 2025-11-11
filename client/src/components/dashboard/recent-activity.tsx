@@ -87,9 +87,6 @@ export function RecentActivity() {
                         {reposition.type}
                       </Badge>
                     </div>
-                    <p className="text-sm text-gray-700 mb-1">
-                      <strong>Solicitante:</strong> {reposition.solicitanteNombre}
-                    </p>
                     <p className="text-sm text-gray-700 mb-2">
                       <strong>Modelo:</strong> {reposition.modeloPrenda}
                     </p>

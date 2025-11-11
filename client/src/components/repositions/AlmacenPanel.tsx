@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 interface Reposition {
   id: number;
   folio: string;
-  type: 'repocision' | 'reproceso';
+  type: 'reposición' | 'reproceso';
   solicitanteNombre: string;
   solicitanteArea: string;
   modeloPrenda: string;

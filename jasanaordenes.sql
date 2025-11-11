@@ -1,84 +1,9 @@
--- ========================================
--- TABLAS DE CATÁLOGOS (Configuración dinámica)
--- ========================================
-
--- Catálogo de áreas
-CREATE TABLE IF NOT EXISTS catalog_areas (
-    id SERIAL PRIMARY KEY,
-    code VARCHAR(50) UNIQUE NOT NULL,
-    name VARCHAR(100) NOT NULL,
-    description TEXT,
-    is_active BOOLEAN NOT NULL DEFAULT true,
-    display_order INTEGER DEFAULT 0,
-    created_at TIMESTAMP NOT NULL DEFAULT now(),
-    updated_at TIMESTAMP NOT NULL DEFAULT now()
-);
-
--- Catálogo de causantes de daño
-CREATE TABLE IF NOT EXISTS catalog_damage_causers (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    description TEXT,
-    is_active BOOLEAN NOT NULL DEFAULT true,
-    display_order INTEGER DEFAULT 0,
-    created_at TIMESTAMP NOT NULL DEFAULT now(),
-    updated_at TIMESTAMP NOT NULL DEFAULT now()
-);
-
--- Catálogo de tipos de accidente/daño
-CREATE TABLE IF NOT EXISTS catalog_accident_types (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    description TEXT,
-    is_active BOOLEAN NOT NULL DEFAULT true,
-    display_order INTEGER DEFAULT 0,
-    created_at TIMESTAMP NOT NULL DEFAULT now(),
-    updated_at TIMESTAMP NOT NULL DEFAULT now()
-);
-
--- Insertar datos iniciales en catálogo de áreas
-INSERT INTO catalog_areas (code, name, display_order) VALUES
-    ('patronaje', 'Patronaje', 1),
-    ('corte', 'Corte', 2),
-    ('bordado', 'Bordado', 3),
-    ('ensamble', 'Ensamble', 4),
-    ('plancha', 'Plancha', 5),
-    ('calidad', 'Calidad', 6),
-    ('operaciones', 'Operaciones', 7),
-    ('admin', 'Administración', 8),
-    ('envios', 'Envíos', 9),
-    ('almacen', 'Almacén', 10),
-    ('diseño', 'Diseño', 11)
-ON CONFLICT (code) DO NOTHING;
-
--- Insertar datos iniciales en catálogo de causantes de daño
-INSERT INTO catalog_damage_causers (name, display_order) VALUES
-    ('Personal de producción', 1),
-    ('Proveedor externo', 2),
-    ('Falla de maquinaria', 3),
-    ('Error de diseño', 4),
-    ('Material defectuoso', 5),
-    ('Otro', 6)
-ON CONFLICT DO NOTHING;
-
--- Insertar datos iniciales en catálogo de tipos de accidente
-INSERT INTO catalog_accident_types (name, display_order) VALUES
-    ('Mancha', 1),
-    ('Rotura', 2),
-    ('Costura defectuosa', 3),
-    ('Medidas incorrectas', 4),
-    ('Color incorrecto', 5),
-    ('Bordado defectuoso', 6),
-    ('Tela defectuosa', 7),
-    ('Otro', 8)
-ON CONFLICT DO NOTHING;
-
 -- Crear tipos ENUM si no existen
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'area') THEN
         CREATE TYPE area AS ENUM (
-            'patronaje', 'corte', 'bordado', 'ensamble',
+            'patronaje', 'corte', 'bordado', 'ensamble', 
             'plancha', 'calidad', 'operaciones', 'admin', 'envios', 'almacen', 'diseño'
         );
     ELSE
@@ -143,6 +68,7 @@ BEGIN
     END IF;
 END
 $$;
+
 
 -- Agregar valores adicionales a los ENUMs si no existen
 DO $$

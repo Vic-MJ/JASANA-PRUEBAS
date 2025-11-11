@@ -23,7 +23,7 @@ import Swal from 'sweetalert2';
 interface Reposition {
   id: number;
   folio: string;
-  type: 'repocision' | 'reproceso';
+  type: 'reposición' | 'reproceso';
   solicitanteNombre: string;
   solicitanteArea: string;
   fechaSolicitud: string;
@@ -33,6 +33,8 @@ interface Reposition {
   urgencia: 'urgente' | 'intermedio' | 'poco_urgente';
   createdAt: string;
   completedAt?: string;
+  noSolicitud?: string;
+  tipoAccidente?: string;
 }
 
 const areas = [
@@ -836,7 +838,7 @@ export function RepositionList({ userArea }: { userArea: string }) {
       let consumoTela = null;
 
       // Si el área actual es Corte y es una reposición (no reproceso), pedir el consumo de tela
-      if (userArea === 'corte' && reposition.type === 'repocision') {
+      if (userArea === 'corte' && reposition.type === 'reposición') {
         const { value: consumo } = await Swal.fire({
           title: 'Consumo de Tela',
           text: 'Especifica la cantidad de tela utilizada (en metros)',
@@ -862,7 +864,11 @@ export function RepositionList({ userArea }: { userArea: string }) {
       const { value: notes } = await Swal.fire({
         title: 'Notas de transferencia',
         input: 'textarea',
-        inputPlaceholder: 'Notas adicionales (opcional)',
+        inputPlaceholder: 'Notas adicionales (opcional, máx. 100 caracteres)',
+        inputAttributes: {
+          maxlength: '100',
+          style: 'word-wrap: break-word; overflow-wrap: break-word; white-space: pre-wrap;'
+        },
         showCancelButton: true,
         confirmButtonColor: '#8B5CF6'
       });
@@ -1287,7 +1293,7 @@ export function RepositionList({ userArea }: { userArea: string }) {
       let consumoTela = null;
 
       // Si el área actual es Corte y es una reposición (no reproceso), pedir el consumo de tela
-      if (userArea === 'corte' && reposition.type === 'repocision') {
+      if (userArea === 'corte' && reposition.type === 'reposición') {
         const { value: consumo } = await Swal.fire({
           title: 'Consumo de Tela',
           text: 'Especifica la cantidad de tela utilizada (en metros)',
@@ -1313,7 +1319,11 @@ export function RepositionList({ userArea }: { userArea: string }) {
       const { value: notes } = await Swal.fire({
         title: 'Notas de transferencia',
         input: 'textarea',
-        inputPlaceholder: 'Notas adicionales (opcional)',
+        inputPlaceholder: 'Notas adicionales (opcional, máx. 100 caracteres)',
+        inputAttributes: {
+          maxlength: '100',
+          style: 'word-wrap: break-word; overflow-wrap: break-word; white-space: pre-wrap;'
+        },
         showCancelButton: true,
         confirmButtonColor: '#8B5CF6'
       });
@@ -1455,7 +1465,7 @@ export function RepositionList({ userArea }: { userArea: string }) {
               </SelectTrigger>
               <SelectContent className="bg-white dark:bg-slate-800 border-gray-300 dark:border-slate-700">
                 <SelectItem value="all" className="text-gray-900 dark:text-gray-100">Todos los tipos</SelectItem>
-                <SelectItem value="repocision" className="text-gray-900 dark:text-gray-100">Reposición</SelectItem>
+                <SelectItem value="reposición" className="text-gray-900 dark:text-gray-100">Reposición</SelectItem>
                 <SelectItem value="reproceso" className="text-gray-900 dark:text-gray-100">Reproceso</SelectItem>
               </SelectContent>
             </Select>

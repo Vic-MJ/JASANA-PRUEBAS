@@ -5,7 +5,7 @@ import { z } from "zod";
 import { InferSelectModel, InferInsertModel } from "drizzle-orm";
 
 export const areaEnum = pgEnum("area", ["patronaje", "corte", "bordado", "ensamble", "plancha", "calidad", "operaciones", "admin", "almacen", "diseño", "envios"]);
-export const repositionTypeEnum = pgEnum("reposition_type", ["repocision", "reproceso"]);
+export const repositionTypeEnum = pgEnum("reposition_type", ["reposición", "reproceso"]);
 export const urgencyEnum = pgEnum("urgency", ["urgente", "intermedio", "poco_urgente"]);
 export const repositionStatusEnum = pgEnum("reposition_status", ["pendiente", "aprobado", "rechazado", "completado", "eliminado", "cancelado"]);
 export const orderStatusEnum = pgEnum("order_status", ["active", "completed", "paused"]);
@@ -502,49 +502,11 @@ export type InsertAgendaEvent = typeof agendaEvents.$inferInsert;
 export const insertAgendaEventSchema = createInsertSchema(agendaEvents);
 export type InsertAgendaEventSchema = z.infer<typeof insertAgendaEventSchema>;
 
-export const catalogAreas = pgTable("catalog_areas", {
-  id: serial("id").primaryKey(),
-  code: varchar("code", { length: 50 }).notNull().unique(),
-  name: varchar("name", { length: 100 }).notNull(),
-  description: text("description"),
-  isActive: boolean("is_active").notNull().default(true),
-  displayOrder: integer("display_order").default(0),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export const catalogDamageCausers = pgTable("catalog_damage_causers", {
-  id: serial("id").primaryKey(),
-  name: varchar("name", { length: 100 }).notNull(),
-  description: text("description"),
-  isActive: boolean("is_active").notNull().default(true),
-  displayOrder: integer("display_order").default(0),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export const catalogAccidentTypes = pgTable("catalog_accident_types", {
-  id: serial("id").primaryKey(),
-  name: varchar("name", { length: 100 }).notNull(),
-  description: text("description"),
-  isActive: boolean("is_active").notNull().default(true),
-  displayOrder: integer("display_order").default(0),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export type CatalogArea = InferSelectModel<typeof catalogAreas>;
-export type InsertCatalogArea = InferInsertModel<typeof catalogAreas>;
-export type CatalogDamageCauser = InferSelectModel<typeof catalogDamageCausers>;
-export type InsertCatalogDamageCauser = InferInsertModel<typeof catalogDamageCausers>;
-export type CatalogAccidentType = InferSelectModel<typeof catalogAccidentTypes>;
-export type InsertCatalogAccidentType = InferInsertModel<typeof catalogAccidentTypes>;
-
 export const areas = ['patronaje', 'corte', 'bordado', 'ensamble', 'plancha', 'calidad', 'operaciones', 'envios', 'almacen', 'admin', 'diseño'] as const;
 export type Area = "patronaje" | "corte" | "bordado" | "ensamble" | "plancha" | "calidad" | "operaciones" | "admin" | "almacen" | "diseño" | "envios";
 export type MaterialStatus = "disponible" | "falta_parcial" | "no_disponible";
 export type RepositionMaterial = InferSelectModel<typeof repositionMaterials>;
 export type InsertRepositionMaterial = InferInsertModel<typeof repositionMaterials>;
-export type RepositionType = "repocision" | "reproceso";
+export type RepositionType = "reposición" | "reproceso";
 export type Urgency = "urgente" | "intermedio" | "poco_urgente";
 export type RepositionStatus = "pendiente" | "aprobado" | "rechazado" | "completado" | "eliminado" | "cancelado";

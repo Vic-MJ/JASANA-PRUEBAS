@@ -15,7 +15,6 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Settings, Users, RotateCcw, Shield, TrendingUp, Package, Edit2, Trash2, UserPlus, Download, Database, Bell, FileText, Activity, AlertTriangle, Upload, Loader2 } from "lucide-react";
 import { type Order } from "@shared/schema";
-import { CatalogsManager } from "@/components/admin/CatalogsManager";
 
 // Define User type locally with 'active' property if not present in @shared/schema
 type User = {
@@ -770,9 +769,6 @@ export default function AdminPage() {
             )}
           </CardContent>
         </Card>
-
-        {/* Gestión de Catálogos */}
-        <CatalogsManager />
 
         {/* System Configuration Mejorada */}
       <Card className="border-0 shadow-lg bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm dark:border-slate-700 overflow-hidden">

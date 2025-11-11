@@ -599,7 +599,7 @@ export function NotificationsPanel({ open, onClose }: NotificationsPanelProps) {
                           <div className="mt-3">
                             <p className="text-xs font-medium text-foreground mb-1">Comentario del solicitante:</p>
                             <div className="bg-white p-2 rounded border-l-4 border-blue-400">
-                              <p className="text-xs text-muted-foreground whitespace-pre-wrap break-words">
+                              <p className="text-xs text-muted-foreground whitespace-pre-wrap break-words word-wrap break-all overflow-wrap-anywhere max-w-full">
                                 {transfer.notes}
                               </p>
                             </div>
