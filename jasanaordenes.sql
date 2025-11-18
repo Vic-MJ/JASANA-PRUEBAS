@@ -508,3 +508,5 @@ CREATE TABLE IF NOT EXISTS documents (
     CONSTRAINT documents_uploaded_by_fkey 
         FOREIGN KEY (uploaded_by) REFERENCES users(id)
 );
+
+ALTER TYPE area ADD VALUE 'maquilas';
